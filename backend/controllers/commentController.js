@@ -1,14 +1,11 @@
-const Comment = require('../models/Comment');
-const Task = require('../models/Task');
+const CommentService = require('../services/CommentService');
 
 // @desc    Get comments for a specific task
 // @route   GET /api/comments/:taskId
 // @access  Private
 const getComments = async (req, res) => {
   try {
-    const comments = await Comment.find({ task: req.params.taskId })
-      .populate('author', 'name email')
-      .sort({ createdAt: 1 });
+    const comments = await CommentService.getComments(req.params.taskId);
     res.json(comments);
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
@@ -20,33 +17,12 @@ const getComments = async (req, res) => {
 // @access  Private
 const addComment = async (req, res) => {
   try {
-    const { content } = req.body;
-    
-    // Check if task exists
-    const task = await Task.findById(req.params.taskId);
-    if (!task) {
-      return res.status(404).json({ message: 'Task not found' });
-    }
-
-    const comment = new Comment({
-      task: req.params.taskId,
-      project: task.project,
-      author: req.user._id,
-      content,
-    });
-
-    const createdComment = await comment.save();
-    
-    // Populate author and task before broadcasting
-    await createdComment.populate('author', 'name email');
-    await createdComment.populate('task', 'title');
-
-    // Emit real-time events for both specific task and the project chat
-    req.io.emit(`new_comment_${req.params.taskId}`, createdComment);
-    req.io.emit(`new_project_message_${task.project}`, createdComment);
-
-    res.status(201).json(createdComment);
+    const comment = await CommentService.addComment(req.user, req.params.taskId, req.body.content, req.io);
+    res.status(201).json(comment);
   } catch (error) {
+    if (error.message === 'Task not found') {
+      return res.status(404).json({ message: error.message });
+    }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
@@ -56,10 +32,7 @@ const addComment = async (req, res) => {
 // @access  Private
 const getProjectComments = async (req, res) => {
   try {
-    const comments = await Comment.find({ project: req.params.projectId })
-      .populate('author', 'name email')
-      .populate('task', 'title')
-      .sort({ createdAt: 1 });
+    const comments = await CommentService.getProjectComments(req.params.projectId);
     res.json(comments);
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
@@ -71,21 +44,8 @@ const getProjectComments = async (req, res) => {
 // @access  Private
 const addProjectComment = async (req, res) => {
   try {
-    const { content } = req.body;
-
-    const comment = new Comment({
-      project: req.params.projectId,
-      author: req.user._id,
-      content,
-    });
-
-    const createdComment = await comment.save();
-    await createdComment.populate('author', 'name email');
-
-    // Emit real-time event for the project chat
-    req.io.emit(`new_project_message_${req.params.projectId}`, createdComment);
-
-    res.status(201).json(createdComment);
+    const comment = await CommentService.addProjectComment(req.user, req.params.projectId, req.body.content, req.io);
+    res.status(201).json(comment);
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }

@@ -1,8 +1,4 @@
-const Task = require('../models/Task');
-const Project = require('../models/Project');
-const User = require('../models/User');
-const sendEmail = require('../utils/sendEmail');
-const logAction = require('../utils/logger');
+const TaskService = require('../services/TaskService');
 
 // @desc    Get all tasks (optionally filtered by project)
 // @route   GET /api/tasks
@@ -10,37 +6,7 @@ const logAction = require('../utils/logger');
 const getTasks = async (req, res) => {
   try {
     const { projectId } = req.query;
-    let query = {};
-
-    if (projectId) {
-      query.project = projectId;
-    }
-
-    if (req.user.role === 'User') {
-      // User can see tasks for projects they are a member of OR tasks explicitly assigned to them
-      const userProjects = await Project.find({ members: req.user._id }).select('_id');
-      const projectIds = userProjects.map(p => p._id);
-
-      if (projectId) {
-        if (!projectIds.some(id => id.toString() === projectId.toString())) {
-          // If not in project, still allow if they are assigned to a task in it
-          // We will handle this by letting the query filter it down to only their assigned tasks
-          query.$and = [
-            { project: projectId },
-            { assignedTo: req.user._id }
-          ];
-        } else {
-          query.project = projectId;
-        }
-      } else {
-        query.$or = [
-          { project: { $in: projectIds } },
-          { assignedTo: req.user._id }
-        ];
-      }
-    }
-
-    const tasks = await Task.find(query).populate('project', 'title').populate('assignedTo', 'name email');
+    const tasks = await TaskService.getTasksForUser(req.user, projectId);
     res.json(tasks);
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
@@ -52,52 +18,12 @@ const getTasks = async (req, res) => {
 // @access  Private (Admin, PM)
 const createTask = async (req, res) => {
   try {
-    const { title, description, project, assignedTo, priority, dueDate } = req.body;
-    
-    // Verify project exists
-    const projectExists = await Project.findById(project);
-    if (!projectExists) {
-      return res.status(404).json({ message: 'Project not found' });
-    }
-
-    const task = new Task({
-      title,
-      description,
-      project,
-      assignedTo,
-      priority,
-      dueDate
-    });
-
-    const createdTask = await task.save();
-
-    // Log action
-    await logAction('TASK_CREATED', req.user._id, { title, priority }, createdTask._id);
-
-    // Broadcast new task
-    req.io.emit('task_created', createdTask);
-
-    // Send email to assignees
-    if (assignedTo && assignedTo.length > 0) {
-      for (const assigneeId of assignedTo) {
-        const user = await User.findById(assigneeId);
-        if (user && user.email) {
-          const message = `You have been assigned a new task: ${title}\n\nDescription: ${description}`;
-          try {
-            await sendEmail({
-              email: user.email,
-              subject: 'New Task Assignment',
-              message,
-            });
-          } catch (err) {
-            console.error('Error sending email to ' + user.email + ':', err);
-          }
-        }
-      }
-    }
-
-    res.status(201).json(createdTask);
+    const task = await TaskService.createTask(req.user, req.body, req.io);
+    res.status(201).json(task);
   } catch (error) {
+    if (error.message === 'Project not found') {
+      return res.status(404).json({ message: error.message });
+    }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
@@ -107,40 +33,15 @@ const createTask = async (req, res) => {
 // @access  Private
 const updateTask = async (req, res) => {
   try {
-    const { title, description, assignedTo, status, priority, dueDate } = req.body;
-    const task = await Task.findById(req.params.id);
-
-    if (!task) {
-      return res.status(404).json({ message: 'Task not found' });
-    }
-
-    // Check authorization: User can only update status if they are in the assignedTo array
-    if (req.user.role === 'User' && !task.assignedTo.includes(req.user._id)) {
-      return res.status(403).json({ message: 'Not authorized to update this task' });
-    }
-
-    // Admin/PM can update everything. User typically only status.
-    if (req.user.role === 'User') {
-      task.status = status || task.status;
-    } else {
-      task.title = title || task.title;
-      task.description = description || task.description;
-      task.assignedTo = assignedTo || task.assignedTo;
-      task.status = status || task.status;
-      task.priority = priority || task.priority;
-      task.dueDate = dueDate || task.dueDate;
-    }
-
-    const updatedTask = await task.save();
-
-    // Log action
-    await logAction('TASK_UPDATED', req.user._id, { status: updatedTask.status, title: updatedTask.title }, updatedTask._id);
-
-    // Broadcast task update
-    req.io.emit('task_updated', updatedTask);
-
+    const updatedTask = await TaskService.updateTask(req.user, req.params.id, req.body, req.io);
     res.json(updatedTask);
   } catch (error) {
+    if (error.message === 'Task not found') {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message === 'Not authorized to update this task') {
+      return res.status(403).json({ message: error.message });
+    }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
@@ -150,15 +51,12 @@ const updateTask = async (req, res) => {
 // @access  Private (Admin, PM)
 const deleteTask = async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id);
-    if (task) {
-      await logAction('TASK_DELETED', req.user._id, { title: task.title }, task._id);
-      await task.deleteOne();
-      res.json({ message: 'Task removed' });
-    } else {
-      res.status(404).json({ message: 'Task not found' });
-    }
+    await TaskService.deleteTask(req.user, req.params.id);
+    res.json({ message: 'Task removed' });
   } catch (error) {
+    if (error.message === 'Task not found') {
+      return res.status(404).json({ message: error.message });
+    }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
@@ -168,26 +66,15 @@ const deleteTask = async (req, res) => {
 // @access  Private
 const uploadTaskFile = async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id);
-    if (!task) {
-      return res.status(404).json({ message: 'Task not found' });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
-
-    const attachment = {
-      filename: req.file.originalname,
-      path: `/uploads/${req.file.filename}`
-    };
-
-    task.attachments.push(attachment);
-    const updatedTask = await task.save();
-
-    req.io.emit('task_updated', updatedTask);
+    const updatedTask = await TaskService.uploadTaskFile(req.params.id, req.file, req.io);
     res.json(updatedTask);
   } catch (error) {
+    if (error.message === 'Task not found') {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message === 'No file uploaded') {
+      return res.status(400).json({ message: error.message });
+    }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
