@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getTasks } from '../../features/tasks/taskSlice';
 import api from '../../services/api';
-import { User, Mail, ShieldAlert, CheckCircle2, Clock, Loader2 } from 'lucide-react';
+import { User, Mail, ShieldAlert, CheckCircle2, Clock, Loader2, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
+import EditUserModal from './EditUserModal';
+import TaskModal from '../user/TaskModal';
 
 const AdminUsers = () => {
   const dispatch = useDispatch();
@@ -11,6 +13,13 @@ const AdminUsers = () => {
   const [users, setUsers] = useState([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [updatingUserId, setUpdatingUserId] = useState(null);
+  
+  // Modals state
+  const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState(null);
+  
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
 
   useEffect(() => {
     dispatch(getTasks());
@@ -50,6 +59,19 @@ const AdminUsers = () => {
     }
   };
 
+  const handleUpdateUserDetails = async (userId, data) => {
+    try {
+      const response = await api.put(`/auth/users/${userId}`, data);
+      if (response.data) {
+        setUsers(users.map(u => u._id === userId ? { ...u, name: data.name, email: data.email } : u));
+        toast.success('User details updated');
+      }
+    } catch (error) {
+      toast.error('Failed to update user details');
+      console.error(error);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
       <div className="mb-6">
@@ -80,7 +102,7 @@ const AdminUsers = () => {
               ) : (
                 users.map(user => {
                   const userTasks = getUserTasks(user._id);
-                  const completedTasks = userTasks.filter(t => t.status === 'Completed').length;
+                  const completedTasks = userTasks.filter(t => t.status === 'Done').length;
                   const activeTasks = userTasks.length - completedTasks;
                   
                   return (
@@ -91,7 +113,16 @@ const AdminUsers = () => {
                             {user.name.charAt(0)}
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-800">{user.name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-gray-800">{user.name}</p>
+                              <button 
+                                onClick={() => { setUserToEdit(user); setIsEditUserModalOpen(true); }}
+                                className="text-gray-400 hover:text-blue-600 transition"
+                                title="Edit User"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </button>
+                            </div>
                             <p className="text-xs text-gray-500">ID: {user._id.slice(-6)}</p>
                           </div>
                         </div>
@@ -136,9 +167,13 @@ const AdminUsers = () => {
                             </div>
                             <ul className="space-y-1">
                               {userTasks.map(task => (
-                                <li key={task._id} className="text-sm flex items-start gap-2">
-                                  <span className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${task.status === 'Completed' ? 'bg-green-500' : 'bg-blue-500'}`}></span>
-                                  <span className={task.status === 'Completed' ? 'line-through text-gray-400' : 'text-gray-700'}>
+                                <li 
+                                  key={task._id} 
+                                  className="text-sm flex items-start gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded transition"
+                                  onClick={() => { setSelectedTask(task); setIsTaskModalOpen(true); }}
+                                >
+                                  <span className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${task.status === 'Done' ? 'bg-green-500' : 'bg-blue-500'}`}></span>
+                                  <span className={task.status === 'Done' ? 'line-through text-gray-400' : 'text-gray-700'}>
                                     {task.title}
                                   </span>
                                 </li>
@@ -155,6 +190,19 @@ const AdminUsers = () => {
           </table>
         </div>
       </div>
+      
+      <EditUserModal 
+        isOpen={isEditUserModalOpen} 
+        onClose={() => { setIsEditUserModalOpen(false); setUserToEdit(null); }} 
+        user={userToEdit} 
+        onSave={handleUpdateUserDetails} 
+      />
+
+      <TaskModal 
+        isOpen={isTaskModalOpen} 
+        onClose={() => { setIsTaskModalOpen(false); setSelectedTask(null); }} 
+        task={selectedTask} 
+      />
     </div>
   );
 };

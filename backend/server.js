@@ -5,6 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const http = require('http');
 const { Server } = require('socket.io');
+const { startCleanupJob } = require('./utils/taskCleanup');
 
 const path = require('path');
 
@@ -31,7 +32,10 @@ app.use((req, res, next) => {
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/nesa-task-system';
 mongoose.connect(MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
+  .then(() => {
+    console.log('Connected to MongoDB');
+    startCleanupJob(); // Start cleanup job after DB connects
+  })
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Routes

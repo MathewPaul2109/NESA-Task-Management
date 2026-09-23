@@ -1,50 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
-import { login, reset } from '../features/auth/authSlice';
-import { Lock, Mail, User } from 'lucide-react';
+import React, { useState } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import api from '../services/api';
+import toast from 'react-hot-toast';
+import { Lock, ShieldCheck } from 'lucide-react';
 
-const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-
-  const { email, password } = formData;
+const ResetPassword = () => {
+  const { token } = useParams();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { user, isLoading, isError, isSuccess, message } = useSelector(
-    (state) => state.auth
-  );
-
-  useEffect(() => {
-    if (isError) {
-      alert(message);
-    }
-
-    if (isSuccess || user) {
-      if (user.role === 'Admin') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/user/dashboard');
-      }
-    }
-
-    dispatch(reset());
-  }, [user, isError, isSuccess, message, navigate, dispatch]);
-
-  const onChange = (e) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      [e.target.name]: e.target.value,
-    }));
-  };
-
-  const onSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const userData = { email, password };
-    dispatch(login(userData));
+    if (password !== confirmPassword) {
+      return toast.error('Passwords do not match');
+    }
+    
+    setIsLoading(true);
+    try {
+      await api.put(`/auth/resetpassword/${token}`, { password });
+      toast.success('Password reset successful! You can now log in.');
+      navigate('/login');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Invalid or expired token');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -60,66 +42,54 @@ const Login = () => {
           <div className="w-24 h-24 rounded-full bg-white/10 border border-white/20 flex items-center justify-center relative overflow-hidden">
              {/* Diagonal reflection shine effect on avatar */}
              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent transform -skew-x-12 opacity-50"></div>
-             <User className="w-12 h-12 text-white/70" />
+             <ShieldCheck className="w-12 h-12 text-white/70" />
           </div>
         </div>
 
-        <form className="mt-8 space-y-5" onSubmit={onSubmit}>
+        <div>
+          <h2 className="mt-2 text-center text-3xl font-bold text-white tracking-wide">
+            Reset Password
+          </h2>
+          <p className="mt-2 text-center text-sm text-white/70">
+            Enter your new password below.
+          </p>
+        </div>
+
+        <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
           <div className="space-y-4">
             
-            {/* Username/Email Input */}
-            <div className="flex bg-white/20 rounded-md overflow-hidden relative">
-               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent transform -skew-x-12 opacity-50 pointer-events-none"></div>
-               <div className="bg-white flex items-center justify-center px-4">
-                  <User className="h-5 w-5 text-gray-700" />
-               </div>
-               <input
-                name="email"
-                type="email"
-                required
-                className="w-full px-4 py-3 bg-transparent text-white placeholder-white/70 focus:outline-none focus:ring-0 focus:bg-white/30 transition-colors"
-                placeholder="Username (Email)"
-                value={email}
-                onChange={onChange}
-              />
-            </div>
-
-            {/* Password Input */}
+            {/* New Password Input */}
             <div className="flex bg-white/20 rounded-md overflow-hidden relative">
                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent transform -skew-x-12 opacity-50 pointer-events-none"></div>
                <div className="bg-white flex items-center justify-center px-4">
                   <Lock className="h-5 w-5 text-gray-700" />
                </div>
                <input
-                name="password"
                 type="password"
                 required
                 className="w-full px-4 py-3 bg-transparent text-white placeholder-white/70 focus:outline-none focus:ring-0 focus:bg-white/30 transition-colors tracking-widest font-mono"
-                placeholder="********"
+                placeholder="New Password"
                 value={password}
-                onChange={onChange}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
 
-          </div>
-
-          <div className="flex items-center justify-between mt-4">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 rounded bg-white/20 border-white/30 text-[#0a0a3a] focus:ring-[#0a0a3a]"
+            {/* Confirm Password Input */}
+            <div className="flex bg-white/20 rounded-md overflow-hidden relative">
+               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent transform -skew-x-12 opacity-50 pointer-events-none"></div>
+               <div className="bg-white flex items-center justify-center px-4">
+                  <Lock className="h-5 w-5 text-gray-700" />
+               </div>
+               <input
+                type="password"
+                required
+                className="w-full px-4 py-3 bg-transparent text-white placeholder-white/70 focus:outline-none focus:ring-0 focus:bg-white/30 transition-colors tracking-widest font-mono"
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
               />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-white/80">
-                Remember me
-              </label>
             </div>
-            <div className="text-sm">
-              <Link to="/forgot-password" className="font-medium text-white hover:text-white/80 transition-colors italic">
-                Forgot Password?
-              </Link>
-            </div>
+
           </div>
 
           <div className="pt-4">
@@ -128,12 +98,13 @@ const Login = () => {
               disabled={isLoading}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold tracking-widest uppercase rounded-sm text-white bg-[#06062b] hover:bg-[#0a0a3a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0a0a3a] transition-all shadow-lg"
             >
-              {isLoading ? 'Signing in...' : 'Login'}
+              {isLoading ? 'Resetting...' : 'Reset Password'}
             </button>
           </div>
-          <div className="text-sm text-center pt-2">
-            <Link to="/register" className="font-medium text-white/70 hover:text-white transition-colors">
-              Don't have an account? Register here.
+          
+          <div className="text-center pt-2">
+            <Link to="/login" className="font-medium text-white/70 hover:text-white transition-colors">
+              Back to Login
             </Link>
           </div>
         </form>
@@ -142,4 +113,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ResetPassword;

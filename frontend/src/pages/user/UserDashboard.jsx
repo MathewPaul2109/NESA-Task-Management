@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getTasks } from '../../features/tasks/taskSlice';
 import { appendComment } from '../../features/comments/commentSlice';
 import { io } from 'socket.io-client';
+import { AlertCircle } from 'lucide-react';
 import TaskModal from './TaskModal';
 
 const UserDashboard = () => {
@@ -52,11 +53,22 @@ const UserDashboard = () => {
     'Done': myTasks.filter(t => t.status === 'Done')
   };
 
+  const pendingCount = columns['To Do'].length + columns['In Progress'].length;
+
   return (
     <div className="h-full flex flex-col">
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-800">My Tasks</h2>
       </div>
+
+      {!isLoading && pendingCount > 0 && (
+        <div className="mb-6 flex items-center gap-3 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg shadow-sm">
+          <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+          <p className="text-sm">
+            You have <strong className="font-semibold">{pendingCount} pending task{pendingCount > 1 ? 's' : ''}</strong> that {pendingCount > 1 ? 'require' : 'requires'} your attention.
+          </p>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="text-center text-gray-500">Loading tasks...</div>
