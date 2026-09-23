@@ -30,7 +30,7 @@ const ProjectModal = ({ isOpen, onClose, editProject }) => {
         setFormData({
           title: editProject.title,
           description: editProject.description,
-          members: editProject.members || [],
+          members: editProject.members ? editProject.members.map(m => m._id || m) : [],
           status: editProject.status,
         });
       } else {
