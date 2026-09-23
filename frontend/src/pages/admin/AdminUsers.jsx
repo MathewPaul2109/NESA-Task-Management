@@ -2,13 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getTasks } from '../../features/tasks/taskSlice';
 import api from '../../services/api';
-import { User, Mail, ShieldAlert, CheckCircle2, Clock } from 'lucide-react';
+import { User, Mail, ShieldAlert, CheckCircle2, Clock, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const AdminUsers = () => {
   const dispatch = useDispatch();
   const { tasks } = useSelector((state) => state.tasks || { tasks: [] });
   const [users, setUsers] = useState([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [updatingUserId, setUpdatingUserId] = useState(null);
 
   useEffect(() => {
     dispatch(getTasks());
@@ -30,6 +32,22 @@ const AdminUsers = () => {
   const getUserTasks = (userId) => {
     if (!tasks || !Array.isArray(tasks)) return [];
     return tasks.filter(t => t.assignedTo?.some(assignee => assignee._id === userId));
+  };
+
+  const handleRoleChange = async (userId, newRole) => {
+    try {
+      setUpdatingUserId(userId);
+      const response = await api.put(`/auth/users/${userId}/role`, { role: newRole });
+      if (response.data) {
+        setUsers(users.map(u => u._id === userId ? { ...u, role: newRole } : u));
+        toast.success('User role updated successfully');
+      }
+    } catch (error) {
+      toast.error('Failed to update role');
+      console.error(error);
+    } finally {
+      setUpdatingUserId(null);
+    }
   };
 
   return (
@@ -85,13 +103,27 @@ const AdminUsers = () => {
                         </div>
                       </td>
                       <td className="p-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.role === 'Admin' ? 'bg-purple-100 text-purple-700' :
-                          user.role === 'Project Manager' ? 'bg-amber-100 text-amber-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {user.role}
-                        </span>
+                        <div className="relative inline-block">
+                          <select
+                            disabled={updatingUserId === user._id}
+                            className={`appearance-none outline-none cursor-pointer pr-8 pl-3 py-1.5 rounded-full text-xs font-semibold border ${
+                              user.role === 'Admin' ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100' :
+                              user.role === 'Project Manager' ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' :
+                              'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                            }`}
+                            value={user.role}
+                            onChange={(e) => handleRoleChange(user._id, e.target.value)}
+                          >
+                            <option value="User">User</option>
+                            <option value="Project Manager">Project Manager</option>
+                            <option value="Admin">Admin</option>
+                          </select>
+                          {updatingUserId === user._id && (
+                            <div className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
+                              <Loader2 className="h-3 w-3 animate-spin text-gray-500" />
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="p-4">
                         {userTasks.length === 0 ? (

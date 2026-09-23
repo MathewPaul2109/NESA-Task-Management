@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { createProject } from '../../features/projects/projectSlice';
+import { createProject, updateProject } from '../../features/projects/projectSlice';
 import api from '../../services/api';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const ProjectModal = ({ isOpen, onClose }) => {
+const ProjectModal = ({ isOpen, onClose, editProject }) => {
   const dispatch = useDispatch();
   const [users, setUsers] = useState([]);
   const [formData, setFormData] = useState({
@@ -26,15 +26,30 @@ const ProjectModal = ({ isOpen, onClose }) => {
     };
     if (isOpen) {
       fetchUsers();
+      if (editProject) {
+        setFormData({
+          title: editProject.title,
+          description: editProject.description,
+          members: editProject.members || [],
+          status: editProject.status,
+        });
+      } else {
+        setFormData({ title: '', description: '', members: [], status: 'Active' });
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, editProject]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    dispatch(createProject(formData));
-    toast.success('Project created successfully!');
+    if (editProject) {
+      dispatch(updateProject({ id: editProject._id, projectData: formData }));
+      toast.success('Project updated successfully!');
+    } else {
+      dispatch(createProject(formData));
+      toast.success('Project created successfully!');
+    }
     setFormData({ title: '', description: '', members: [], status: 'Active' });
     onClose();
   };
@@ -54,7 +69,7 @@ const ProjectModal = ({ isOpen, onClose }) => {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-800">New Project</h2>
+          <h2 className="text-xl font-bold text-gray-800">{editProject ? 'Edit Project' : 'New Project'}</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X className="h-5 w-5" />
           </button>
@@ -115,7 +130,7 @@ const ProjectModal = ({ isOpen, onClose }) => {
               Cancel
             </button>
             <button type="submit" className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition">
-              Create Project
+              {editProject ? 'Save Changes' : 'Create Project'}
             </button>
           </div>
         </form>

@@ -29,6 +29,16 @@ export const createProject = createAsyncThunk('projects/create', async (projectD
   }
 });
 
+export const updateProject = createAsyncThunk('projects/update', async ({ id, projectData }, thunkAPI) => {
+  try {
+    const response = await api.put(`/projects/${id}`, projectData);
+    return response.data;
+  } catch (error) {
+    const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
 export const projectSlice = createSlice({
   name: 'project',
   initialState,
@@ -62,6 +72,12 @@ export const projectSlice = createSlice({
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
+      })
+      .addCase(updateProject.fulfilled, (state, action) => {
+        const index = state.projects.findIndex(p => p._id === action.payload._id);
+        if (index !== -1) {
+          state.projects[index] = action.payload;
+        }
       });
   },
 });

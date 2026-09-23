@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getProjects } from '../../features/projects/projectSlice';
-import { FolderGit2, Users, CheckCircle2, Plus, MessageSquare } from 'lucide-react';
+import { FolderGit2, Users, CheckCircle2, Plus, MessageSquare, Edit } from 'lucide-react';
 import ProjectModal from './ProjectModal';
 import AdminTaskModal from './AdminTaskModal';
 import ProjectChatDrawer from '../../components/ProjectChatDrawer';
@@ -10,6 +10,7 @@ const AdminDashboard = () => {
   const dispatch = useDispatch();
   const { projects, isLoading } = useSelector((state) => state.projects);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [projectToEdit, setProjectToEdit] = useState(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [activeChatProject, setActiveChatProject] = useState(null);
 
@@ -32,7 +33,10 @@ const AdminDashboard = () => {
             <Plus className="h-4 w-4" /> Assign Task
           </button>
           <button 
-            onClick={() => setIsProjectModalOpen(true)}
+            onClick={() => {
+              setProjectToEdit(null);
+              setIsProjectModalOpen(true);
+            }}
             className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition flex items-center gap-2"
           >
             <Plus className="h-4 w-4" /> New Project
@@ -108,12 +112,23 @@ const AdminDashboard = () => {
                     </td>
                     <td className="p-4 text-gray-600">{project.members?.length || 0} users</td>
                     <td className="p-4 text-right">
-                      <button 
-                        onClick={() => setActiveChatProject(project)}
-                        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 transition font-medium text-sm"
-                      >
-                        <MessageSquare className="h-4 w-4" /> Chat
-                      </button>
+                      <div className="flex items-center justify-end gap-3">
+                        <button 
+                          onClick={() => {
+                            setProjectToEdit(project);
+                            setIsProjectModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1 text-gray-500 hover:text-gray-700 transition font-medium text-sm"
+                        >
+                          <Edit className="h-4 w-4" /> Edit
+                        </button>
+                        <button 
+                          onClick={() => setActiveChatProject(project)}
+                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 transition font-medium text-sm"
+                        >
+                          <MessageSquare className="h-4 w-4" /> Chat
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -123,7 +138,11 @@ const AdminDashboard = () => {
         </div>
       </div>
       
-      <ProjectModal isOpen={isProjectModalOpen} onClose={() => setIsProjectModalOpen(false)} />
+      <ProjectModal 
+        isOpen={isProjectModalOpen} 
+        onClose={() => setIsProjectModalOpen(false)} 
+        editProject={projectToEdit}
+      />
       <AdminTaskModal isOpen={isTaskModalOpen} onClose={() => setIsTaskModalOpen(false)} />
       
       <ProjectChatDrawer 

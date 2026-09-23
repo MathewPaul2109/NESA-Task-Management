@@ -20,7 +20,19 @@ const getProjects = async (req, res) => {
         ] 
       };
     }
-    const projects = await Project.find(query).populate('manager', 'name email');
+    const projects = await Project.find(query).populate('manager', 'name email').lean();
+    
+    // Calculate true total members by merging explicit members + task assignees
+    const Task = require('../models/Task');
+    for (let p of projects) {
+      const tasks = await Task.find({ project: p._id }).select('assignedTo');
+      const uniqueMembers = new Set(p.members.map(id => id.toString()));
+      tasks.forEach(t => {
+        t.assignedTo.forEach(userId => uniqueMembers.add(userId.toString()));
+      });
+      p.members = Array.from(uniqueMembers);
+    }
+
     res.json(projects);
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
