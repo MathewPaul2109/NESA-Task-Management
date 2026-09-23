@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const logAction = require('../utils/logger');
 
 // Generate JWT
 const generateToken = (id) => {
@@ -118,6 +119,8 @@ const updateUserRole = async (req, res) => {
 
     user.role = role;
     await user.save();
+
+    await logAction('ROLE_UPDATED', req.user.id, { newRole: role, targetUserEmail: user.email }, user._id);
 
     res.json({
       _id: user.id,

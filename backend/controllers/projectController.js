@@ -1,4 +1,5 @@
 const Project = require('../models/Project');
+const logAction = require('../utils/logger');
 
 // @desc    Get all projects
 // @route   GET /api/projects
@@ -75,6 +76,7 @@ const createProject = async (req, res) => {
       status
     });
     const createdProject = await project.save();
+    await logAction('PROJECT_CREATED', req.user._id, { title }, createdProject._id);
     res.status(201).json(createdProject);
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
@@ -96,6 +98,7 @@ const updateProject = async (req, res) => {
       project.status = status || project.status;
 
       const updatedProject = await project.save();
+      await logAction('PROJECT_UPDATED', req.user._id, { title: updatedProject.title, status: updatedProject.status }, updatedProject._id);
       res.json(updatedProject);
     } else {
       res.status(404).json({ message: 'Project not found' });
@@ -112,6 +115,7 @@ const deleteProject = async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
     if (project) {
+      await logAction('PROJECT_DELETED', req.user._id, { title: project.title }, project._id);
       await project.deleteOne();
       res.json({ message: 'Project removed' });
     } else {

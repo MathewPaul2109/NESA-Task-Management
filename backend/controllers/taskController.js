@@ -2,6 +2,7 @@ const Task = require('../models/Task');
 const Project = require('../models/Project');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
+const logAction = require('../utils/logger');
 
 // @desc    Get all tasks (optionally filtered by project)
 // @route   GET /api/tasks
@@ -70,6 +71,9 @@ const createTask = async (req, res) => {
 
     const createdTask = await task.save();
 
+    // Log action
+    await logAction('TASK_CREATED', req.user._id, { title, priority }, createdTask._id);
+
     // Broadcast new task
     req.io.emit('task_created', createdTask);
 
@@ -129,6 +133,9 @@ const updateTask = async (req, res) => {
 
     const updatedTask = await task.save();
 
+    // Log action
+    await logAction('TASK_UPDATED', req.user._id, { status: updatedTask.status, title: updatedTask.title }, updatedTask._id);
+
     // Broadcast task update
     req.io.emit('task_updated', updatedTask);
 
@@ -145,6 +152,7 @@ const deleteTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
     if (task) {
+      await logAction('TASK_DELETED', req.user._id, { title: task.title }, task._id);
       await task.deleteOne();
       res.json({ message: 'Task removed' });
     } else {
@@ -155,9 +163,39 @@ const deleteTask = async (req, res) => {
   }
 };
 
+// @desc    Upload file to task
+// @route   POST /api/tasks/:id/upload
+// @access  Private
+const uploadTaskFile = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const attachment = {
+      filename: req.file.originalname,
+      path: `/uploads/${req.file.filename}`
+    };
+
+    task.attachments.push(attachment);
+    const updatedTask = await task.save();
+
+    req.io.emit('task_updated', updatedTask);
+    res.json(updatedTask);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
 module.exports = {
   getTasks,
   createTask,
   updateTask,
-  deleteTask
+  deleteTask,
+  uploadTaskFile
 };

@@ -30,7 +30,15 @@ const taskSchema = new mongoose.Schema({
   },
   dueDate: {
     type: Date,
-  }
+  },
+  attachments: [{
+    filename: String,
+    path: String,
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 }, { timestamps: true });
 
 const Task = mongoose.model('Task', taskSchema);

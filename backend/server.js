@@ -6,6 +6,8 @@ const helmet = require('helmet');
 const http = require('http');
 const { Server } = require('socket.io');
 
+const path = require('path');
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -15,7 +17,10 @@ const io = new Server(server, {
 // Middleware
 app.use(express.json());
 app.use(cors());
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: false })); // Allow cross-origin images
+
+// Serve uploads folder statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Make io accessible to our router
 app.use((req, res, next) => {
@@ -34,11 +39,13 @@ const authRoutes = require('./routes/authRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const commentRoutes = require('./routes/commentRoutes');
+const logRoutes = require('./routes/logRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/logs', logRoutes);
 
 // Basic Route
 app.get('/', (req, res) => {

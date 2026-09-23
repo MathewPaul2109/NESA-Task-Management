@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateTask } from '../../features/tasks/taskSlice';
 import { getComments, addComment, resetComments } from '../../features/comments/commentSlice';
-import { X, Send } from 'lucide-react';
+import { X, Send, Paperclip, FileText, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../../services/api';
 
 const TaskModal = ({ isOpen, onClose, task }) => {
   const dispatch = useDispatch();
@@ -12,6 +13,7 @@ const TaskModal = ({ isOpen, onClose, task }) => {
   
   const [status, setStatus] = useState('To Do');
   const [newComment, setNewComment] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (task && isOpen) {
@@ -34,6 +36,29 @@ const TaskModal = ({ isOpen, onClose, task }) => {
     if (newComment.trim()) {
       dispatch(addComment({ taskId: task._id, content: newComment }));
       setNewComment('');
+    }
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      setIsUploading(true);
+      const res = await api.post(`/tasks/${task._id}/upload`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      dispatch(updateTask({ id: task._id, taskData: res.data }));
+      toast.success('File uploaded successfully!');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to upload file');
+    } finally {
+      setIsUploading(false);
+      e.target.value = null; // Reset input
     }
   };
 
@@ -72,6 +97,38 @@ const TaskModal = ({ isOpen, onClose, task }) => {
                   <span className="font-medium text-gray-800">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}</span>
                 </div>
               </div>
+            </div>
+
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Attachments</h3>
+                <label className="cursor-pointer text-blue-600 hover:text-blue-700 flex items-center gap-1 text-xs font-medium">
+                  <Paperclip className="h-3 w-3" />
+                  {isUploading ? 'Uploading...' : 'Attach File'}
+                  <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
+                </label>
+              </div>
+              {task.attachments && task.attachments.length > 0 ? (
+                <div className="space-y-2">
+                  {task.attachments.map((file, idx) => (
+                    <a 
+                      key={idx}
+                      href={`http://localhost:5000${file.path}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between p-2 bg-white border border-gray-200 rounded hover:bg-gray-50 transition"
+                    >
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <FileText className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-sm text-gray-700 truncate">{file.filename}</span>
+                      </div>
+                      <Download className="h-3 w-3 text-gray-400 hover:text-gray-600" />
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-xs text-gray-400 italic bg-white p-3 rounded border border-gray-100 text-center">No attachments yet.</div>
+              )}
             </div>
 
             <div className="mb-6">

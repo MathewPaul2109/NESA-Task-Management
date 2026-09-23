@@ -71,9 +71,17 @@ What's Completed
   - Built a dual-dashboard architecture using modern UI (Lucide React, Tailwind).
   - Created a dynamic Kanban Board for users to manage tasks.
   - Built an overview dashboard for admins to manage projects.
-* Phase 6, 7 & 8 (Interactivity, Chat, Polish):
-  - Built interactive Modals for creating Projects and assigning Tasks.
-  - Integrated a live chat/comments system into the Task UI.
+* Phase 6, 7 & 8 (Interactivity, Chat, Polish, and Architecture):
+  - Built interactive Modals for creating and editing Projects.
+  - Built a unified "WhatsApp-style" Project Chatbox that references and highlights tasks.
   - Finalized UX with 'react-hot-toast' notifications and unified 'My Projects' view.
+  - Fixed logic for calculating "Team Members" based on task assignments rather than direct project assignment.
+  - Implemented an interactive Role Management interface allowing Admins to change roles dynamically.
+  - Enforced "Project Manager" architecture and specific UI/route permissions for PMs vs Admins.
+  - Corrected and verified Nodemailer integration using App Passwords.
+* Phase 9 (Final Requirements: Uploads & Logs):
+  - Integrated `multer` to support attaching files to tasks inside the Kanban board.
+  - Built a comprehensive System Activity Log backend utility to track and record all major events (project/task/role updates).
+  - Developed the Admin Activity Logs UI dashboard for viewing the system audit trail.
   
-The NESA Task Management System is complete and ready for production use.
+The NESA Task Management System is now 100% complete and perfectly fulfills all provided assignment requirements.

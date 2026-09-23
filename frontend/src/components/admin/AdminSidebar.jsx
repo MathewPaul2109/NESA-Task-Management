@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, Activity } from 'lucide-react';
 import { useSelector } from 'react-redux';
 
 const AdminSidebar = () => {
@@ -17,10 +17,16 @@ const AdminSidebar = () => {
           <span className="font-medium">Dashboard</span>
         </NavLink>
         {user?.role === 'Admin' && (
-          <NavLink to="/admin/users" className={({isActive}) => `flex items-center gap-3 px-3 py-2 rounded-md transition ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-            <Users className="h-5 w-5" />
-            <span className="font-medium">User Management</span>
-          </NavLink>
+          <>
+            <NavLink to="/admin/users" className={({isActive}) => `flex items-center gap-3 px-3 py-2 rounded-md transition ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+              <Users className="h-5 w-5" />
+              <span className="font-medium">User Management</span>
+            </NavLink>
+            <NavLink to="/admin/logs" className={({isActive}) => `flex items-center gap-3 px-3 py-2 rounded-md transition ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+              <Activity className="h-5 w-5" />
+              <span className="font-medium">Activity Logs</span>
+            </NavLink>
+          </>
         )}
       </nav>
       <div className="p-4 border-t border-gray-100">

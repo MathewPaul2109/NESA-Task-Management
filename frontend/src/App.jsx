@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import PrivateRoute from './components/PrivateRoute';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminLogs from './pages/admin/AdminLogs';
 import UserDashboard from './pages/user/UserDashboard';
 import UserProjects from './pages/user/UserProjects';
 
@@ -29,6 +30,7 @@ function App() {
         <Route element={<PrivateRoute allowedRoles={['Admin']} />}>
           <Route element={<Layout />}>
             <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/logs" element={<AdminLogs />} />
           </Route>
         </Route>
 
