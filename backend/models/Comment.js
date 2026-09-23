@@ -4,6 +4,10 @@ const commentSchema = new mongoose.Schema({
   task: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Task',
+  },
+  project: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Project',
     required: true,
   },
   author: {

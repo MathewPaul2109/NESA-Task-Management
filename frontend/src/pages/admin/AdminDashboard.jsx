@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getProjects } from '../../features/projects/projectSlice';
-import { FolderGit2, Users, CheckCircle2, Plus } from 'lucide-react';
+import { FolderGit2, Users, CheckCircle2, Plus, MessageSquare } from 'lucide-react';
 import ProjectModal from './ProjectModal';
 import AdminTaskModal from './AdminTaskModal';
+import ProjectChatDrawer from '../../components/ProjectChatDrawer';
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
   const { projects, isLoading } = useSelector((state) => state.projects);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [activeChatProject, setActiveChatProject] = useState(null);
 
   useEffect(() => {
     dispatch(getProjects());
@@ -78,6 +80,7 @@ const AdminDashboard = () => {
                 <th className="p-4 font-medium">Manager</th>
                 <th className="p-4 font-medium">Status</th>
                 <th className="p-4 font-medium">Members</th>
+                <th className="p-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -104,6 +107,14 @@ const AdminDashboard = () => {
                       </span>
                     </td>
                     <td className="p-4 text-gray-600">{project.members?.length || 0} users</td>
+                    <td className="p-4 text-right">
+                      <button 
+                        onClick={() => setActiveChatProject(project)}
+                        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 transition font-medium text-sm"
+                      >
+                        <MessageSquare className="h-4 w-4" /> Chat
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -114,6 +125,12 @@ const AdminDashboard = () => {
       
       <ProjectModal isOpen={isProjectModalOpen} onClose={() => setIsProjectModalOpen(false)} />
       <AdminTaskModal isOpen={isTaskModalOpen} onClose={() => setIsTaskModalOpen(false)} />
+      
+      <ProjectChatDrawer 
+        isOpen={!!activeChatProject} 
+        onClose={() => setActiveChatProject(null)} 
+        project={activeChatProject} 
+      />
     </div>
   );
 };

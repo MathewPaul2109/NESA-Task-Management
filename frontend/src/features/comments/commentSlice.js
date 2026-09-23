@@ -21,7 +21,27 @@ export const getComments = createAsyncThunk('comments/getAll', async (taskId, th
 
 export const addComment = createAsyncThunk('comments/add', async ({ taskId, content }, thunkAPI) => {
   try {
-    const response = await api.post('/comments', { task: taskId, content });
+    const response = await api.post(`/comments/${taskId}`, { content });
+    return response.data;
+  } catch (error) {
+    const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+export const getProjectComments = createAsyncThunk('comments/getProject', async (projectId, thunkAPI) => {
+  try {
+    const response = await api.get(`/comments/project/${projectId}`);
+    return response.data;
+  } catch (error) {
+    const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+export const addProjectComment = createAsyncThunk('comments/addProject', async ({ projectId, content }, thunkAPI) => {
+  try {
+    const response = await api.post(`/comments/project/${projectId}`, { content });
     return response.data;
   } catch (error) {
     const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
@@ -65,6 +85,22 @@ export const commentSlice = createSlice({
         state.message = action.payload;
       })
       .addCase(addComment.fulfilled, (state, action) => {
+        state.comments.push(action.payload);
+      })
+      .addCase(getProjectComments.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(getProjectComments.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.comments = action.payload;
+      })
+      .addCase(getProjectComments.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+      .addCase(addProjectComment.fulfilled, (state, action) => {
         state.comments.push(action.payload);
       });
   },

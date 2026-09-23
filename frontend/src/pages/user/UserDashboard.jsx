@@ -8,6 +8,7 @@ import TaskModal from './TaskModal';
 const UserDashboard = () => {
   const dispatch = useDispatch();
   const { tasks, isLoading } = useSelector((state) => state.tasks);
+  const { user } = useSelector((state) => state.auth);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -41,12 +42,14 @@ const UserDashboard = () => {
     };
   }, [dispatch]);
 
-  // Kanban Columns Data Structure
+  // Kanban Columns Data Structure (Filtered for the current user)
+  const myTasks = tasks.filter(t => t.assignedTo?.some(assignee => assignee._id === user?._id || assignee === user?._id));
+
   const columns = {
-    'To Do': tasks.filter(t => t.status === 'To Do'),
-    'In Progress': tasks.filter(t => t.status === 'In Progress'),
-    'Review': tasks.filter(t => t.status === 'Review'),
-    'Done': tasks.filter(t => t.status === 'Done')
+    'To Do': myTasks.filter(t => t.status === 'To Do'),
+    'In Progress': myTasks.filter(t => t.status === 'In Progress'),
+    'Review': myTasks.filter(t => t.status === 'Review'),
+    'Done': myTasks.filter(t => t.status === 'Done')
   };
 
   return (

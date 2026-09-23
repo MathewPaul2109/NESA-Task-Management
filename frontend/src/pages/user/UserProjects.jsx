@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getProjects } from '../../features/projects/projectSlice';
-import { FolderGit2, Users } from 'lucide-react';
+import { FolderGit2, Users, MessageSquare } from 'lucide-react';
+import ProjectChatDrawer from '../../components/ProjectChatDrawer';
 
 const UserProjects = () => {
   const dispatch = useDispatch();
   const { projects, isLoading } = useSelector((state) => state.projects);
+  const [activeChatProject, setActiveChatProject] = React.useState(null);
 
   useEffect(() => {
     dispatch(getProjects());
@@ -41,14 +43,28 @@ const UserProjects = () => {
               <p className="text-sm text-gray-500 line-clamp-3 mb-4 h-12">
                 {project.description}
               </p>
-              <div className="flex items-center text-sm text-gray-600 pt-4 border-t border-gray-100">
-                <Users className="h-4 w-4 mr-2 text-gray-400" />
-                <span>{project.members?.length || 0} Team Members</span>
+              <div className="flex items-center justify-between text-sm text-gray-600 pt-4 border-t border-gray-100">
+                <div className="flex items-center">
+                  <Users className="h-4 w-4 mr-2 text-gray-400" />
+                  <span>{project.members?.length || 0} Team Members</span>
+                </div>
+                <button 
+                  onClick={() => setActiveChatProject(project)}
+                  className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition font-medium"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Chat
+                </button>
               </div>
             </div>
           ))}
         </div>
       )}
+      <ProjectChatDrawer 
+        isOpen={!!activeChatProject} 
+        onClose={() => setActiveChatProject(null)} 
+        project={activeChatProject} 
+      />
     </div>
   );
 };

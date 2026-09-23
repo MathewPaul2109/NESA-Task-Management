@@ -6,9 +6,19 @@ const Project = require('../models/Project');
 const getProjects = async (req, res) => {
   try {
     let query = {};
-    // If User, only show projects where they are a member or manager
+    // If User, only show projects where they are a member, manager, or have an assigned task
     if (req.user.role === 'User') {
-      query = { $or: [{ members: req.user._id }, { manager: req.user._id }] };
+      const Task = require('../models/Task');
+      const assignedTasks = await Task.find({ assignedTo: req.user._id }).select('project');
+      const projectIdsFromTasks = assignedTasks.map(t => t.project);
+
+      query = { 
+        $or: [
+          { members: req.user._id }, 
+          { manager: req.user._id },
+          { _id: { $in: projectIdsFromTasks } }
+        ] 
+      };
     }
     const projects = await Project.find(query).populate('manager', 'name email');
     res.json(projects);

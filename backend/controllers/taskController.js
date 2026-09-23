@@ -16,16 +16,26 @@ const getTasks = async (req, res) => {
     }
 
     if (req.user.role === 'User') {
-      // User can see tasks for projects they are a member of
+      // User can see tasks for projects they are a member of OR tasks explicitly assigned to them
       const userProjects = await Project.find({ members: req.user._id }).select('_id');
       const projectIds = userProjects.map(p => p._id);
 
       if (projectId) {
         if (!projectIds.some(id => id.toString() === projectId.toString())) {
-          return res.status(403).json({ message: 'Not authorized for this project' });
+          // If not in project, still allow if they are assigned to a task in it
+          // We will handle this by letting the query filter it down to only their assigned tasks
+          query.$and = [
+            { project: projectId },
+            { assignedTo: req.user._id }
+          ];
+        } else {
+          query.project = projectId;
         }
       } else {
-        query.project = { $in: projectIds };
+        query.$or = [
+          { project: { $in: projectIds } },
+          { assignedTo: req.user._id }
+        ];
       }
     }
 

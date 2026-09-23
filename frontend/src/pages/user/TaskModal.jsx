@@ -112,7 +112,7 @@ const TaskModal = ({ isOpen, onClose, task }) => {
                 comments.map((comment) => (
                   <div key={comment._id} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-medium text-xs text-gray-800">{comment.user?.name || 'Unknown User'}</span>
+                      <span className="font-medium text-xs text-gray-800">{comment.author?.name || 'Unknown User'}</span>
                       <span className="text-[10px] text-gray-400">{new Date(comment.createdAt).toLocaleString()}</span>
                     </div>
                     <p className="text-sm text-gray-700">{comment.content}</p>
