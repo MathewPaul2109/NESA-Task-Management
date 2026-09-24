@@ -134,6 +134,22 @@ class TaskService {
     return await TaskRepository.findArchivedTasks();
   }
 
+  async restoreTask(user, taskId, io) {
+    const task = await TaskRepository.findTaskById(taskId);
+    if (!task) {
+      throw new Error('Task not found');
+    }
+    if (!task.isArchived) {
+      throw new Error('Task is not archived');
+    }
+
+    const restoredTask = await TaskRepository.restoreTask(task);
+    await logAction('TASK_RESTORED', user._id, { title: task.title }, task._id);
+    io.emit('task_created', restoredTask);
+
+    return restoredTask;
+  }
+
   async uploadTaskFile(taskId, file, io) {
     const task = await TaskRepository.findTaskById(taskId);
     if (!task) {

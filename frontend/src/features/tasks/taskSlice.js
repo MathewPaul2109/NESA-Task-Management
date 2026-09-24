@@ -62,6 +62,16 @@ export const getArchivedTasks = createAsyncThunk('tasks/getArchived', async (_, 
   }
 });
 
+export const restoreTask = createAsyncThunk('tasks/restore', async (taskId, thunkAPI) => {
+  try {
+    const response = await api.patch(`/tasks/${taskId}/restore`);
+    return response.data;
+  } catch (error) {
+    const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
 export const taskSlice = createSlice({
   name: 'task',
   initialState,
@@ -123,6 +133,16 @@ export const taskSlice = createSlice({
       })
       .addCase(getArchivedTasks.rejected, (state, action) => {
         state.isArchivedLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+      })
+      .addCase(restoreTask.fulfilled, (state, action) => {
+        // Remove from archived list
+        state.archivedTasks = state.archivedTasks.filter(t => t._id !== action.payload._id);
+        // Add back to active tasks list
+        state.tasks.push(action.payload);
+      })
+      .addCase(restoreTask.rejected, (state, action) => {
         state.isError = true;
         state.message = action.payload;
       });

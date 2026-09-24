@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getArchivedTasks } from '../../features/tasks/taskSlice';
-import { Archive, User, FolderOpen } from 'lucide-react';
+import { getArchivedTasks, restoreTask } from '../../features/tasks/taskSlice';
+import { Archive, User, FolderOpen, RotateCcw } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const priorityStyles = {
   High:   'bg-red-100 text-red-700',
@@ -16,6 +17,17 @@ const AdminArchivedTasks = () => {
   useEffect(() => {
     dispatch(getArchivedTasks());
   }, [dispatch]);
+
+  const handleRestore = async (e, taskId, taskTitle) => {
+    e.stopPropagation();
+    if (!window.confirm(`Restore "${taskTitle}"? It will move back to the active task board.`)) return;
+    const result = await dispatch(restoreTask(taskId));
+    if (restoreTask.fulfilled.match(result)) {
+      toast.success(`"${taskTitle}" restored to active tasks.`);
+    } else {
+      toast.error(result.payload || 'Failed to restore task.');
+    }
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -48,18 +60,19 @@ const AdminArchivedTasks = () => {
                 <th className="p-4 font-medium">Assigned To</th>
                 <th className="p-4 font-medium">Priority</th>
                 <th className="p-4 font-medium">Archived At</th>
+                <th className="p-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {isArchivedLoading ? (
                 <tr>
-                  <td colSpan="5" className="text-center p-8 text-gray-400">
+                  <td colSpan="6" className="text-center p-8 text-gray-400">
                     Loading archived tasks...
                   </td>
                 </tr>
               ) : archivedTasks.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="text-center p-12">
+                  <td colSpan="6" className="text-center p-12">
                     <div className="flex flex-col items-center gap-3 text-gray-400">
                       <Archive className="h-10 w-10 opacity-30" />
                       <p className="font-medium">No archived tasks yet</p>
@@ -103,6 +116,14 @@ const AdminArchivedTasks = () => {
                     </td>
                     <td className="p-4 text-sm text-gray-500">
                       {task.archivedAt ? new Date(task.archivedAt).toLocaleString() : '—'}
+                    </td>
+                    <td className="p-4 text-right">
+                      <button
+                        onClick={(e) => handleRestore(e, task._id, task.title)}
+                        className="inline-flex items-center gap-1.5 text-sm text-green-600 hover:text-green-800 font-medium transition"
+                      >
+                        <RotateCcw className="h-4 w-4" /> Restore
+                      </button>
                     </td>
                   </tr>
                 ))

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getTasks, createTask, updateTask, deleteTask, uploadTaskFile, archiveTask, getArchivedTasks } = require('../controllers/taskController');
+const { getTasks, createTask, updateTask, deleteTask, uploadTaskFile, archiveTask, getArchivedTasks, restoreTask } = require('../controllers/taskController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
@@ -18,5 +18,6 @@ router.route('/:id')
 router.post('/:id/upload', protect, upload.single('file'), uploadTaskFile);
 
 router.patch('/:id/archive', protect, authorize('Admin', 'Project Manager'), archiveTask);
+router.patch('/:id/restore', protect, authorize('Admin', 'Project Manager'), restoreTask);
 
 module.exports = router;

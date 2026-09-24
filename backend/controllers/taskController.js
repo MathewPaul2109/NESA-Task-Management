@@ -109,6 +109,24 @@ const archiveTask = async (req, res) => {
   }
 };
 
+// @desc    Restore an archived task
+// @route   PATCH /api/tasks/:id/restore
+// @access  Private (Admin, PM)
+const restoreTask = async (req, res) => {
+  try {
+    const restoredTask = await TaskService.restoreTask(req.user, req.params.id, req.io);
+    res.json(restoredTask);
+  } catch (error) {
+    if (error.message === 'Task not found') {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message === 'Task is not archived') {
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
 module.exports = {
   getTasks,
   createTask,
@@ -117,4 +135,5 @@ module.exports = {
   uploadTaskFile,
   archiveTask,
   getArchivedTasks,
+  restoreTask,
 };

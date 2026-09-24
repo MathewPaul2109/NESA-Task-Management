@@ -38,6 +38,12 @@ class TaskRepository {
     return await task.save();
   }
 
+  async restoreTask(task) {
+    task.isArchived = false;
+    task.archivedAt = null;
+    return await task.save();
+  }
+
   async findArchivedTasks() {
     return await Task.find({ isArchived: true })
       .populate('project', 'title')
