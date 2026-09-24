@@ -4,12 +4,14 @@ import { getProjects } from '../../features/projects/projectSlice';
 import { getTasks } from '../../features/tasks/taskSlice';
 import { FolderGit2, Users, MessageSquare } from 'lucide-react';
 import ProjectChatDrawer from '../../components/ProjectChatDrawer';
+import ProjectTasksModal from './ProjectTasksModal';
 
 const UserProjects = () => {
   const dispatch = useDispatch();
   const { projects, isLoading: isProjectsLoading } = useSelector((state) => state.projects);
   const { tasks } = useSelector((state) => state.tasks || { tasks: [] });
   const [activeChatProject, setActiveChatProject] = React.useState(null);
+  const [activeTasksProject, setActiveTasksProject] = React.useState(null);
 
   useEffect(() => {
     dispatch(getProjects());
@@ -35,7 +37,11 @@ const UserProjects = () => {
             const progressPercentage = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
             return (
-            <div key={project._id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow flex flex-col">
+            <div 
+              key={project._id} 
+              onClick={() => setActiveTasksProject(project)}
+              className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow flex flex-col cursor-pointer"
+            >
               <div className="flex justify-between items-start mb-4">
                 <div className="bg-blue-100 p-3 rounded-lg text-blue-600">
                   <FolderGit2 className="h-6 w-6" />
@@ -77,7 +83,7 @@ const UserProjects = () => {
                   <span>{project.members?.length || 0} Team Members</span>
                 </div>
                 <button 
-                  onClick={() => setActiveChatProject(project)}
+                  onClick={(e) => { e.stopPropagation(); setActiveChatProject(project); }}
                   className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition font-medium"
                 >
                   <MessageSquare className="h-4 w-4" />
@@ -93,6 +99,11 @@ const UserProjects = () => {
         isOpen={!!activeChatProject} 
         onClose={() => setActiveChatProject(null)} 
         project={activeChatProject} 
+      />
+      <ProjectTasksModal 
+        isOpen={!!activeTasksProject} 
+        onClose={() => setActiveTasksProject(null)} 
+        project={activeTasksProject} 
       />
     </div>
   );

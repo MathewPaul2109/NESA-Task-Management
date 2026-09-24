@@ -33,6 +33,26 @@ const AdminLogs = () => {
     return action.split('_').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
   };
 
+  const formatDetails = (details) => {
+    if (!details) return null;
+    if (typeof details === 'string') return details;
+    try {
+      return Object.entries(details)
+        .map(([key, value]) => {
+          // Add spaces before capital letters and capitalize first letter
+          const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+          // Handle nested objects or arrays simply
+          const formattedValue = typeof value === 'object' && value !== null 
+            ? JSON.stringify(value) 
+            : String(value);
+          return `${formattedKey}: ${formattedValue}`;
+        })
+        .join('\n');
+    } catch (e) {
+      return JSON.stringify(details, null, 2);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
       <div className="mb-6">
@@ -88,8 +108,8 @@ const AdminLogs = () => {
                     </td>
                     <td className="p-4 align-top max-w-sm">
                       {log.details ? (
-                        <div className="bg-gray-100 p-2 rounded text-xs font-mono text-gray-700 whitespace-pre-wrap break-all">
-                          {JSON.stringify(log.details, null, 2)}
+                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 text-sm text-gray-700 whitespace-pre-wrap break-words leading-relaxed">
+                          {formatDetails(log.details)}
                         </div>
                       ) : (
                         <span className="text-gray-400 text-sm italic">No extra details</span>

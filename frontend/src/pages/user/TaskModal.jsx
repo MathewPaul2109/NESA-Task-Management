@@ -14,17 +14,26 @@ const TaskModal = ({ isOpen, onClose, task }) => {
   const [status, setStatus] = useState('To Do');
   const [newComment, setNewComment] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
     if (task && isOpen) {
       setStatus(task.status);
+      setNotes(task.userNotes || '');
       dispatch(getComments(task._id));
     } else {
       dispatch(resetComments());
+      setNotes('');
     }
   }, [task, isOpen, dispatch]);
 
   if (!isOpen || !task) return null;
+
+  const handleNotesUpdate = () => {
+    dispatch(updateTask({ id: task._id, taskData: { userNotes: notes } }));
+    dispatch(addComment({ taskId: task._id, content: `Updated task notes: ${notes}` }));
+    toast.success('Notes saved and comment posted!');
+  };
 
   const handleStatusUpdate = () => {
     dispatch(updateTask({ id: task._id, taskData: { status } }));
@@ -129,6 +138,24 @@ const TaskModal = ({ isOpen, onClose, task }) => {
               ) : (
                 <div className="text-xs text-gray-400 italic bg-white p-3 rounded border border-gray-100 text-center">No attachments yet.</div>
               )}
+            </div>
+
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">User Notes</h3>
+              <div className="flex flex-col gap-2">
+                <textarea 
+                  className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none resize-none h-20"
+                  placeholder="Add additional details or progress notes..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+                <button 
+                  onClick={handleNotesUpdate}
+                  className="self-end px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded hover:bg-gray-200 transition"
+                >
+                  Save Notes
+                </button>
+              </div>
             </div>
 
             <div className="mb-6">

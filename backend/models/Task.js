@@ -38,7 +38,11 @@ const taskSchema = new mongoose.Schema({
       type: Date,
       default: Date.now
     }
-  }]
+  }],
+  userNotes: {
+    type: String,
+    default: ''
+  }
 }, { timestamps: true });
 
 const Task = mongoose.model('Task', taskSchema);
