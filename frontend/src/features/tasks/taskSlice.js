@@ -3,9 +3,11 @@ import api from '../../services/api';
 
 const initialState = {
   tasks: [],
+  archivedTasks: [],
   isError: false,
   isSuccess: false,
   isLoading: false,
+  isArchivedLoading: false,
   message: '',
 };
 
@@ -40,11 +42,34 @@ export const createTask = createAsyncThunk('tasks/create', async (taskData, thun
   }
 });
 
+export const archiveTask = createAsyncThunk('tasks/archive', async (taskId, thunkAPI) => {
+  try {
+    await api.patch(`/tasks/${taskId}/archive`);
+    return taskId;
+  } catch (error) {
+    const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+export const getArchivedTasks = createAsyncThunk('tasks/getArchived', async (_, thunkAPI) => {
+  try {
+    const response = await api.get('/tasks/archived');
+    return response.data;
+  } catch (error) {
+    const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
 export const taskSlice = createSlice({
   name: 'task',
   initialState,
   reducers: {
     reset: (state) => initialState,
+    removeTask: (state, action) => {
+      state.tasks = state.tasks.filter(t => t._id !== action.payload);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -80,9 +105,29 @@ export const taskSlice = createSlice({
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload;
+      })
+      .addCase(archiveTask.fulfilled, (state, action) => {
+        // Remove the archived task from the active list immediately
+        state.tasks = state.tasks.filter(t => t._id !== action.payload);
+      })
+      .addCase(archiveTask.rejected, (state, action) => {
+        state.isError = true;
+        state.message = action.payload;
+      })
+      .addCase(getArchivedTasks.pending, (state) => {
+        state.isArchivedLoading = true;
+      })
+      .addCase(getArchivedTasks.fulfilled, (state, action) => {
+        state.isArchivedLoading = false;
+        state.archivedTasks = action.payload;
+      })
+      .addCase(getArchivedTasks.rejected, (state, action) => {
+        state.isArchivedLoading = false;
+        state.isError = true;
+        state.message = action.payload;
       });
   },
 });
 
-export const { reset } = taskSlice.actions;
+export const { reset, removeTask } = taskSlice.actions;
 export default taskSlice.reducer;

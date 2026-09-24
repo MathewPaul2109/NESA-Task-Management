@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Settings, Activity } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, Activity, Archive } from 'lucide-react';
 import { useSelector } from 'react-redux';
 
 const AdminSidebar = () => {
@@ -28,6 +28,10 @@ const AdminSidebar = () => {
             </NavLink>
           </>
         )}
+        <NavLink to="/admin/archived-tasks" className={({isActive}) => `flex items-center gap-3 px-3 py-2 rounded-md transition ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+          <Archive className="h-5 w-5" />
+          <span className="font-medium">Archived Tasks</span>
+        </NavLink>
       </nav>
       <div className="p-4 border-t border-gray-100">
         <a href="#settings" className="flex items-center gap-3 px-3 py-2 text-gray-500 hover:text-gray-800 transition">

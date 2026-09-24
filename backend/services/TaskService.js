@@ -114,6 +114,26 @@ class TaskService {
     await TaskRepository.deleteTask(task);
   }
 
+  async archiveTask(user, taskId, io) {
+    const task = await TaskRepository.findTaskById(taskId);
+    if (!task) {
+      throw new Error('Task not found');
+    }
+    if (task.status !== 'Done') {
+      throw new Error('Only completed tasks can be archived');
+    }
+
+    const archivedTask = await TaskRepository.archiveTask(task);
+    await logAction('TASK_ARCHIVED', user._id, { title: task.title }, task._id);
+    io.emit('task_archived', { _id: archivedTask._id });
+
+    return archivedTask;
+  }
+
+  async getArchivedTasks() {
+    return await TaskRepository.findArchivedTasks();
+  }
+
   async uploadTaskFile(taskId, file, io) {
     const task = await TaskRepository.findTaskById(taskId);
     if (!task) {

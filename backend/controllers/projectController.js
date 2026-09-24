@@ -5,7 +5,7 @@ const ProjectService = require('../services/ProjectService');
 // @access  Private
 const getProjects = async (req, res) => {
   try {
-    const projects = await ProjectService.getProjectsForUser(req.user);
+    const projects = await ProjectService.getProjectsForUser(req.user, req.query);
     res.json(projects);
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });

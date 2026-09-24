@@ -2,7 +2,7 @@ const Task = require('../models/Task');
 
 class TaskRepository {
   async findTasks(query) {
-    return await Task.find(query)
+    return await Task.find({ ...query, isArchived: { $ne: true } })
       .populate('project', 'title')
       .populate('assignedTo', 'name email');
   }
@@ -30,6 +30,19 @@ class TaskRepository {
 
   async deleteTask(task) {
     return await task.deleteOne();
+  }
+
+  async archiveTask(task) {
+    task.isArchived = true;
+    task.archivedAt = new Date();
+    return await task.save();
+  }
+
+  async findArchivedTasks() {
+    return await Task.find({ isArchived: true })
+      .populate('project', 'title')
+      .populate('assignedTo', 'name email')
+      .sort({ archivedAt: -1 });
   }
 }
 

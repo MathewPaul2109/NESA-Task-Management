@@ -3,19 +3,33 @@ const TaskRepository = require('../repositories/TaskRepository');
 const logAction = require('../utils/logger');
 
 class ProjectService {
-  async getProjectsForUser(user) {
+  async getProjectsForUser(user, queryParams = {}) {
     let query = {};
+    const filters = [];
+
     if (user.role === 'User') {
       const assignedTasks = await TaskRepository.findTasksAssignedToUser(user._id);
       const projectIdsFromTasks = assignedTasks.map(t => t.project);
 
-      query = { 
+      filters.push({ 
         $or: [
           { members: user._id }, 
           { manager: user._id },
           { _id: { $in: projectIdsFromTasks } }
         ] 
-      };
+      });
+    }
+
+    if (queryParams.search) {
+      filters.push({ title: { $regex: queryParams.search, $options: 'i' } });
+    }
+    
+    if (queryParams.status) {
+      filters.push({ status: queryParams.status });
+    }
+
+    if (filters.length > 0) {
+      query = { $and: filters };
     }
 
     const projects = await ProjectRepository.findProjects(query);

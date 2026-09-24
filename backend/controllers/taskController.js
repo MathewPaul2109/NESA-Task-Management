@@ -79,10 +79,42 @@ const uploadTaskFile = async (req, res) => {
   }
 };
 
+// @desc    Get all archived tasks
+// @route   GET /api/tasks/archived
+// @access  Private (Admin, PM)
+const getArchivedTasks = async (req, res) => {
+  try {
+    const tasks = await TaskService.getArchivedTasks();
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
+// @desc    Archive a completed task
+// @route   PATCH /api/tasks/:id/archive
+// @access  Private (Admin, PM)
+const archiveTask = async (req, res) => {
+  try {
+    const archivedTask = await TaskService.archiveTask(req.user, req.params.id, req.io);
+    res.json(archivedTask);
+  } catch (error) {
+    if (error.message === 'Task not found') {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message === 'Only completed tasks can be archived') {
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
 module.exports = {
   getTasks,
   createTask,
   updateTask,
   deleteTask,
-  uploadTaskFile
+  uploadTaskFile,
+  archiveTask,
+  getArchivedTasks,
 };

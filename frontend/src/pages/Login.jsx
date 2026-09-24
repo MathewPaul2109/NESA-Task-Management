@@ -95,7 +95,7 @@ const Login = () => {
                 type="password"
                 required
                 className="w-full px-4 py-3 bg-transparent text-white placeholder-white/70 focus:outline-none focus:ring-0 focus:bg-white/30 transition-colors tracking-widest font-mono"
-                placeholder="********"
+                placeholder="••••••••••••"
                 value={password}
                 onChange={onChange}
               />

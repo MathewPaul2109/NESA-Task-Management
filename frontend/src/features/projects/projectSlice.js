@@ -9,9 +9,9 @@ const initialState = {
   message: '',
 };
 
-export const getProjects = createAsyncThunk('projects/getAll', async (_, thunkAPI) => {
+export const getProjects = createAsyncThunk('projects/getAll', async (params = {}, thunkAPI) => {
   try {
-    const response = await api.get('/projects');
+    const response = await api.get('/projects', { params });
     return response.data;
   } catch (error) {
     const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();

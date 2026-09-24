@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getProjects } from '../../features/projects/projectSlice';
-import { getTasks } from '../../features/tasks/taskSlice';
-import { FolderGit2, Users, CheckCircle2, Plus, MessageSquare, Edit, ListTodo } from 'lucide-react';
+import { getTasks, archiveTask } from '../../features/tasks/taskSlice';
+import { FolderGit2, Users, CheckCircle2, Plus, MessageSquare, Edit, ListTodo, Search, Archive } from 'lucide-react';
 import ProjectModal from './ProjectModal';
 import AdminTaskModal from './AdminTaskModal';
 import ProjectChatDrawer from '../../components/ProjectChatDrawer';
 import TaskModal from '../user/TaskModal';
+import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
@@ -20,16 +21,38 @@ const AdminDashboard = () => {
   const [selectedCompletedTask, setSelectedCompletedTask] = useState(null);
   const [isCompletedTaskModalOpen, setIsCompletedTaskModalOpen] = useState(false);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
   useEffect(() => {
-    dispatch(getProjects());
+    // Add debouncing for search
+    const timer = setTimeout(() => {
+      dispatch(getProjects({ search: searchQuery, status: statusFilter }));
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [dispatch, searchQuery, statusFilter]);
+
+  useEffect(() => {
     dispatch(getTasks());
   }, [dispatch]);
 
   const activeProjects = projects.filter(p => p.status === 'Active').length;
   const completedProjects = projects.filter(p => p.status === 'Completed').length;
-  
-  const completedTasks = tasks.filter(t => t.status === 'Done').sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-  const recentCompletedTasks = completedTasks.slice(0, 5);
+
+  const completedTasks = tasks
+    .filter(t => t.status === 'Done')
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+  const handleArchive = async (e, taskId, taskTitle) => {
+    e.stopPropagation();
+    if (!window.confirm(`Archive "${taskTitle}"? It will be removed from the board.`)) return;
+    const result = await dispatch(archiveTask(taskId));
+    if (archiveTask.fulfilled.match(result)) {
+      toast.success(`"${taskTitle}" archived successfully.`);
+    } else {
+      toast.error(result.payload || 'Failed to archive task.');
+    }
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -85,7 +108,31 @@ const AdminDashboard = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col overflow-hidden">
-        <div className="p-4 border-b border-gray-100 font-semibold text-gray-700">Recent Projects</div>
+        <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <span className="font-semibold text-gray-700">Recent Projects</span>
+          <div className="flex gap-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="Search projects..." 
+                className="pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 outline-none w-64"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <select 
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="On Hold">On Hold</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -172,53 +219,60 @@ const AdminDashboard = () => {
         </div>
       </div>
       
-      {/* Recent Completed Tasks Section */}
-      <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col overflow-hidden">
-        <div className="p-4 border-b border-gray-100 font-semibold text-gray-700 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ListTodo className="h-5 w-5 text-green-500" />
-            Recent Completed Tasks
+      {/* Completed Tasks Section */}
+      {(isTasksLoading || completedTasks.length > 0) && (
+        <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col overflow-hidden">
+          <div className="p-4 border-b border-gray-100 font-semibold text-gray-700 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ListTodo className="h-5 w-5 text-green-500" />
+              Completed Tasks
+            </div>
+            <span className="text-sm font-normal text-gray-500">{completedTasks.length} task{completedTasks.length !== 1 ? 's' : ''}</span>
           </div>
-          <span className="text-sm font-normal text-gray-500">Showing max 5 • Auto-cleans after 12h</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
-                <th className="p-4 font-medium">Task Title</th>
-                <th className="p-4 font-medium">Project</th>
-                <th className="p-4 font-medium">Completed At</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isTasksLoading ? (
-                <tr>
-                  <td colSpan="3" className="text-center p-4 text-gray-500">Loading tasks...</td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
+                  <th className="p-4 font-medium">Task Title</th>
+                  <th className="p-4 font-medium">Project</th>
+                  <th className="p-4 font-medium">Completed At</th>
+                  <th className="p-4 font-medium text-right">Actions</th>
                 </tr>
-              ) : recentCompletedTasks.length === 0 ? (
-                <tr>
-                  <td colSpan="3" className="text-center p-4 text-gray-500">No recently completed tasks.</td>
-                </tr>
-              ) : (
-                recentCompletedTasks.map(task => (
-                  <tr 
-                    key={task._id} 
-                    className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => {
-                      setSelectedCompletedTask(task);
-                      setIsCompletedTaskModalOpen(true);
-                    }}
-                  >
-                    <td className="p-4 font-medium text-gray-800">{task.title}</td>
-                    <td className="p-4 text-gray-600">{task.project?.title || 'Unknown Project'}</td>
-                    <td className="p-4 text-gray-500 text-sm">{new Date(task.updatedAt).toLocaleString()}</td>
+              </thead>
+              <tbody>
+                {isTasksLoading ? (
+                  <tr>
+                    <td colSpan="4" className="text-center p-4 text-gray-500">Loading tasks...</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  completedTasks.map(task => (
+                    <tr
+                      key={task._id}
+                      className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => {
+                        setSelectedCompletedTask(task);
+                        setIsCompletedTaskModalOpen(true);
+                      }}
+                    >
+                      <td className="p-4 font-medium text-gray-800">{task.title}</td>
+                      <td className="p-4 text-gray-600">{task.project?.title || 'Unknown Project'}</td>
+                      <td className="p-4 text-gray-500 text-sm">{new Date(task.updatedAt).toLocaleString()}</td>
+                      <td className="p-4 text-right">
+                        <button
+                          onClick={(e) => handleArchive(e, task._id, task.title)}
+                          className="inline-flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-800 font-medium transition"
+                        >
+                          <Archive className="h-4 w-4" /> Archive
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
       
       <ProjectModal 
         isOpen={isProjectModalOpen} 

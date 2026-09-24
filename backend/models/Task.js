@@ -42,6 +42,14 @@ const taskSchema = new mongoose.Schema({
   userNotes: {
     type: String,
     default: ''
+  },
+  isArchived: {
+    type: Boolean,
+    default: false,
+  },
+  archivedAt: {
+    type: Date,
+    default: null,
   }
 }, { timestamps: true });
 
