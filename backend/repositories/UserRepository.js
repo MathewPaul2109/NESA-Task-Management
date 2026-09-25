@@ -31,6 +31,10 @@ class UserRepository {
   async updateUser(user) {
     return await user.save();
   }
+
+  async deleteUser(id) {
+    return await User.findByIdAndDelete(id);
+  }
 }
 
 module.exports = new UserRepository();

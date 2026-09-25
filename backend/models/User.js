@@ -26,6 +26,10 @@ const userSchema = new mongoose.Schema({
     enum: ['Admin', 'Project Manager', 'User'],
     default: 'User',
   },
+  isArchived: {
+    type: Boolean,
+    default: false,
+  },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
 }, { timestamps: true });

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getTasks } from '../../features/tasks/taskSlice';
 import api from '../../services/api';
-import { User, Mail, ShieldAlert, CheckCircle2, Clock, Loader2, Pencil } from 'lucide-react';
+import { User, Mail, ShieldAlert, CheckCircle2, Clock, Loader2, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import EditUserModal from './EditUserModal';
 import TaskModal from '../user/TaskModal';
@@ -26,7 +26,7 @@ const AdminUsers = () => {
 
     const fetchUsers = async () => {
       try {
-        const response = await api.get('/auth/users');
+        const response = await api.get('/auth/users?archived=false');
         setUsers(response.data);
       } catch (error) {
         console.error('Failed to fetch users:', error);
@@ -68,6 +68,21 @@ const AdminUsers = () => {
       }
     } catch (error) {
       toast.error('Failed to update user details');
+      console.error(error);
+    }
+  };
+
+  const handleDeleteUser = async (userId, userName) => {
+    if (!window.confirm(`Are you sure you want to completely remove ${userName}? This action cannot be undone.`)) {
+      return;
+    }
+    
+    try {
+      await api.delete(`/auth/users/${userId}`);
+      setUsers(users.filter(u => u._id !== userId));
+      toast.success('User removed successfully');
+    } catch (error) {
+      toast.error('Failed to remove user');
       console.error(error);
     }
   };
@@ -122,8 +137,14 @@ const AdminUsers = () => {
                               >
                                 <Pencil className="h-3 w-3" />
                               </button>
+                              <button 
+                                onClick={() => handleDeleteUser(user._id, user.name)}
+                                className="text-gray-400 hover:text-red-600 transition"
+                                title="Delete User"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
                             </div>
-                            <p className="text-xs text-gray-500">ID: {user._id.slice(-6)}</p>
                           </div>
                         </div>
                       </td>

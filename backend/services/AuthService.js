@@ -68,8 +68,8 @@ class AuthService {
     return user;
   }
 
-  async getUsers() {
-    return await UserRepository.findUsers();
+  async getUsers(query = {}) {
+    return await UserRepository.findUsers(query);
   }
 
   async updateUserRole(adminUserId, targetUserId, newRole) {
@@ -85,7 +85,7 @@ class AuthService {
     user.role = newRole;
     await UserRepository.updateUser(user);
 
-    await logAction('ROLE_UPDATED', adminUserId, { newRole: newRole, targetUserEmail: user.email }, user._id);
+    await logAction('ROLE_UPDATED', adminUserId, { newRole: newRole, targetUserName: user.name, targetUserEmail: user.email }, user._id);
 
     return {
       _id: user.id,
@@ -106,7 +106,7 @@ class AuthService {
     
     await UserRepository.updateUser(user);
 
-    await logAction('USER_UPDATED', adminUserId, { newName: user.name, newEmail: user.email, targetUserId: user._id }, user._id);
+    await logAction('USER_UPDATED', adminUserId, { newName: user.name, newEmail: user.email, targetUserName: user.name }, user._id);
 
     return {
       _id: user.id,
@@ -114,6 +114,34 @@ class AuthService {
       email: user.email,
       role: user.role,
     };
+  }
+
+  async deleteUser(adminUserId, targetUserId) {
+    const user = await UserRepository.findById(targetUserId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    user.isArchived = true;
+    await UserRepository.updateUser(user);
+
+    await logAction('USER_ARCHIVED', adminUserId, { targetUserName: user.name }, targetUserId);
+
+    return { message: 'User archived' };
+  }
+
+  async restoreUser(adminUserId, targetUserId) {
+    const user = await UserRepository.findById(targetUserId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    user.isArchived = false;
+    await UserRepository.updateUser(user);
+
+    await logAction('USER_RESTORED', adminUserId, { targetUserName: user.name }, targetUserId);
+
+    return { message: 'User restored' };
   }
 
   async forgotPassword(email) {

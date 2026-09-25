@@ -91,7 +91,10 @@ const TaskModal = ({ isOpen, onClose, task }) => {
           <div className="md:w-1/2 p-6 border-r border-gray-100 overflow-y-auto bg-gray-50">
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Description</h3>
-              <p className="text-gray-800 text-sm whitespace-pre-wrap">{task.description}</p>
+              <div
+                className="text-gray-800 text-sm prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: task.description || '<em class="text-gray-400">No description provided.</em>' }}
+              />
             </div>
             
             <div className="mb-6">

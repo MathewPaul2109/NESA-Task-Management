@@ -19,7 +19,7 @@ const UserProjects = () => {
   }, [dispatch]);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-800">My Projects</h2>
       </div>
@@ -29,7 +29,8 @@ const UserProjects = () => {
       ) : projects.length === 0 ? (
         <div className="text-center text-gray-500 mt-10">You are not assigned to any projects yet.</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="flex-1 overflow-y-auto pr-2 pb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map(project => {
             const projectTasks = tasks.filter(t => (t.project?._id || t.project) === project._id);
             const totalTasks = projectTasks.length;
@@ -55,9 +56,10 @@ const UserProjects = () => {
                 </span>
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-1">{project.title}</h3>
-              <p className="text-sm text-gray-500 line-clamp-3 mb-4 flex-1">
-                {project.description}
-              </p>
+              <div
+                className="text-sm text-gray-500 line-clamp-3 mb-4 flex-1 prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: project.description }}
+              />
               
               {/* Progress Bar Section */}
               <div className="mb-4">
@@ -93,6 +95,7 @@ const UserProjects = () => {
             </div>
             );
           })}
+          </div>
         </div>
       )}
       <ProjectChatDrawer 

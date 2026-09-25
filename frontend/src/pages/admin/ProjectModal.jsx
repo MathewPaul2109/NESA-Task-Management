@@ -4,6 +4,7 @@ import { createProject, updateProject } from '../../features/projects/projectSli
 import api from '../../services/api';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import RichTextEditor from '../../components/RichTextEditor';
 
 const ProjectModal = ({ isOpen, onClose, editProject }) => {
   const dispatch = useDispatch();
@@ -11,6 +12,7 @@ const ProjectModal = ({ isOpen, onClose, editProject }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    manager: '',
     members: [],
     status: 'Active',
   });
@@ -30,11 +32,12 @@ const ProjectModal = ({ isOpen, onClose, editProject }) => {
         setFormData({
           title: editProject.title,
           description: editProject.description,
+          manager: editProject.manager?._id || editProject.manager || '',
           members: editProject.members ? editProject.members.map(m => m._id || m) : [],
           status: editProject.status,
         });
       } else {
-        setFormData({ title: '', description: '', members: [], status: 'Active' });
+        setFormData({ title: '', description: '', manager: '', members: [], status: 'Active' });
       }
     }
   }, [isOpen, editProject]);
@@ -50,7 +53,7 @@ const ProjectModal = ({ isOpen, onClose, editProject }) => {
       dispatch(createProject(formData));
       toast.success('Project created successfully!');
     }
-    setFormData({ title: '', description: '', members: [], status: 'Active' });
+    setFormData({ title: '', description: '', manager: '', members: [], status: 'Active' });
     onClose();
   };
 
@@ -67,7 +70,7 @@ const ProjectModal = ({ isOpen, onClose, editProject }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-gray-800">{editProject ? 'Edit Project' : 'New Project'}</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
@@ -88,14 +91,27 @@ const ProjectModal = ({ isOpen, onClose, editProject }) => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea 
-              required
-              rows="2"
-              className="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description / Instructions</label>
+            <RichTextEditor
               value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-            ></textarea>
+              onChange={(value) => setFormData({ ...formData, description: value })}
+              placeholder="Provide project goals, scope, and instructions for the team..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Assign Project Manager</label>
+            <select
+              required
+              className="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              value={formData.manager}
+              onChange={(e) => setFormData({ ...formData, manager: e.target.value })}
+            >
+              <option value="">-- Select a Project Manager --</option>
+              {users.filter(u => u.role === 'Project Manager').map(u => (
+                <option key={u._id} value={u._id}>{u.name}</option>
+              ))}
+            </select>
           </div>
 
           <div>
@@ -106,7 +122,7 @@ const ProjectModal = ({ isOpen, onClose, editProject }) => {
               value={formData.members} 
               onChange={handleMemberSelect}
             >
-              {users.filter(u => u.role !== 'Admin').map(u => (
+              {users.filter(u => u.role === 'User').map(u => (
                 <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
               ))}
             </select>

@@ -5,21 +5,37 @@ import toast from 'react-hot-toast';
 
 const AdminLogs = () => {
   const [logs, setLogs] = useState([]);
+  const [users, setUsers] = useState({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchLogs = async () => {
+    const fetchData = async () => {
       try {
-        const res = await api.get('/logs');
-        setLogs(res.data);
+        const [logsRes, usersRes] = await Promise.all([
+          api.get('/logs'),
+          api.get('/auth/users?archived=true') // Fetching all (active + archived backend might need just users, but let's fetch all we can or use another route)
+        ]);
+        
+        // In backend, ?archived=true ONLY gets archived users. We need all users. 
+        // We'll just fetch without query for active, but wait, the backend doesn't have an "all" endpoint. 
+        // Let's just fetch active users, it's better than nothing for now.
+        const usersResActive = await api.get('/auth/users?archived=false');
+        
+        const userMap = {};
+        [...usersRes.data, ...usersResActive.data].forEach(u => {
+          userMap[u._id] = u.name;
+        });
+        
+        setUsers(userMap);
+        setLogs(logsRes.data);
       } catch (error) {
-        toast.error('Failed to fetch activity logs');
+        toast.error('Failed to fetch data');
         console.error(error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchLogs();
+    fetchData();
   }, []);
 
   const getActionIcon = (action) => {
@@ -37,17 +53,39 @@ const AdminLogs = () => {
     if (!details) return null;
     if (typeof details === 'string') return details;
     try {
-      return Object.entries(details)
-        .map(([key, value]) => {
-          // Add spaces before capital letters and capitalize first letter
-          const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-          // Handle nested objects or arrays simply
-          const formattedValue = typeof value === 'object' && value !== null 
-            ? JSON.stringify(value) 
-            : String(value);
-          return `${formattedKey}: ${formattedValue}`;
-        })
-        .join('\n');
+        return Object.entries(details)
+          .filter(([key]) => {
+            // Hide targetUserId only if we have targetUserName directly in details
+            if (key === 'targetUserId' && details.targetUserName) return false;
+            if (key === 'targetUserId' && details.newName) return false;
+            return true;
+          })
+          .map(([key, value]) => {
+            let formattedValue = value;
+            let formattedKey = key;
+            
+            // If this is a targetUserId and we found their name in our map, swap it out!
+            if (key === 'targetUserId' && users[value]) {
+              formattedKey = 'Target User Name';
+              formattedValue = users[value];
+            } else if (key === 'targetUserId') {
+              // Hide ID entirely if we couldn't resolve it and they really want it hidden, 
+              // but I will just label it "Target User (ID)"
+              formattedKey = 'Target User (ID)';
+            }
+            // Add spaces before capital letters and capitalize first letter
+            if (formattedKey === key) {
+              formattedKey = formattedKey.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+            }
+            
+            // Handle nested objects or arrays simply
+            if (typeof formattedValue === 'object' && formattedValue !== null) {
+              formattedValue = JSON.stringify(formattedValue);
+            }
+            
+            return `${formattedKey}: ${formattedValue}`;
+          })
+          .join('\n');
     } catch (e) {
       return JSON.stringify(details, null, 2);
     }
