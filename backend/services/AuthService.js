@@ -55,6 +55,7 @@ class AuthService {
         token: generateToken(user._id),
       };
     } else {
+      await logAction('LOGIN_FAILED', user ? user._id : null, { email, reason: 'Invalid credentials' });
       throw new Error('Invalid credentials');
     }
   }

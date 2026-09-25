@@ -11,9 +11,9 @@ class UserRepository {
   
   async findUserForLogin(query) {
     if (typeof query === 'string') {
-      return await User.findOne({ email: query });
+      return await User.findOne({ email: query }).select('+password');
     }
-    return await User.findOne(query);
+    return await User.findOne(query).select('+password');
   }
 
   async findOne(query) {
