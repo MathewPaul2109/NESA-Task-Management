@@ -23,25 +23,22 @@ The repository contains:
 
 ```mermaid
 flowchart LR
-    U[User / Browser] --> FE[React + Vite Frontend]
+    U[User Browser] --> FE[React Frontend]
     FE --> RT[React Router]
-    FE --> RS[Redux Toolkit Store]
+    FE --> RS[Redux Store]
     FE --> API[REST API Client]
-    FE <-->|real-time events| WS[Socket.IO Client]
-
-    API --> MW[JWT / Role Middleware]
-    WS <--> SIO[Socket.IO Server]
-
+    FE --> WS[SocketIO Client]
+    API --> MW[JWT and Role Middleware]
+    WS --> SIO[SocketIO Server]
     MW --> CTRL[Express Controllers]
     CTRL --> SVC[Business Services]
-    SVC --> REPO[Repository Layer]
-    REPO --> DB[(MongoDB / Mongoose)]
-
+    SVC --> REPO[Repositories]
+    REPO --> DB[MongoDB]
     SVC --> LOG[Activity Logger]
-    SVC --> MAIL[Nodemailer]
-    CTRL --> UP[Multer Upload Middleware]
-    UP --> FS[(backend/uploads)]
-    SIO --> CTRL
+    SVC --> MAIL[Email Service]
+    CTRL --> UP[Upload Middleware]
+    UP --> FS[Uploads Storage]
+    SIO --> FE
 ```
 
 ## 3. Complete Request/Response Workflow
@@ -88,20 +85,20 @@ The application exposes public registration/login/password-reset endpoints and p
 
 ```mermaid
 flowchart TD
-    A[Open application] --> B{Authenticated?}
-    B -- No --> C[Login / Register]
-    C --> D[POST /api/auth/login or /register]
+    A[Open application] --> B{Authenticated}
+    B -->|No| C[Login or Register]
+    C --> D[Auth API]
     D --> E[Auth Controller]
     E --> F[Auth Service]
     F --> G[User Repository]
-    G --> H[(MongoDB User)]
+    G --> H[MongoDB]
     H --> F
-    F --> I[JWT generated]
-    I --> J[Frontend auth state]
+    F --> I[JWT returned]
+    I --> J[Redux Auth State]
     J --> K{Role}
-    K -- Admin --> L[/admin/dashboard]
-    K -- Project Manager/User --> M[/user/dashboard]
-    B -- Yes --> N[Protected route]
+    K -->|Admin| L[Admin Dashboard]
+    K -->|Manager or User| M[User Dashboard]
+    B -->|Yes| N[Protected Route]
     N --> K
 ```
 
@@ -111,15 +108,15 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[Requested protected route] --> B{Redux auth.user exists?}
-    B -- No --> C[Redirect to /login]
-    B -- Yes --> D{allowedRoles supplied?}
-    D -- No --> E[Render route]
-    D -- Yes --> F{User role allowed?}
-    F -- Yes --> E
-    F -- No --> G{Admin?}
-    G -- Yes --> H[Redirect /admin/dashboard]
-    G -- No --> I[Redirect /user/dashboard]
+    A[Protected Route Requested] --> B{User in Redux}
+    B -->|No| C[Redirect to Login]
+    B -->|Yes| D{Role Restriction Exists}
+    D -->|No| E[Render Route]
+    D -->|Yes| F{Role Allowed}
+    F -->|Yes| E
+    F -->|No| G{Admin Role}
+    G -->|Yes| H[Redirect to Admin Dashboard]
+    G -->|No| I[Redirect to User Dashboard]
 ```
 
 ## 4. Application-Level Workflow
@@ -232,21 +229,21 @@ The application supports comments at both the task level and project level. Redu
 
 ```mermaid
 flowchart LR
-    UI[Task / Project Chat UI] -->|GET| API1[/api/comments/:taskId]
-    UI -->|POST| API2[/api/comments/:taskId]
-    UI -->|GET| API3[/api/comments/project/:projectId]
-    UI -->|POST| API4[/api/comments/project/:projectId]
-
-    API1 --> C[Comment Controller]
-    API2 --> C
-    API3 --> C
-    API4 --> C
+    UI[Task or Project Chat UI] --> A1[Task Comments GET]
+    UI --> A2[Task Comments POST]
+    UI --> A3[Project Comments GET]
+    UI --> A4[Project Comments POST]
+    A1 --> C[Comment Controller]
+    A2 --> C
+    A3 --> C
+    A4 --> C
     C --> S[Comment Service]
     S --> R[Comment Repository]
-    R --> DB[(MongoDB)]
-
-    DB --> R --> S --> C --> UI
-    WS[Socket.IO / real-time path] --> UI
+    R --> DB[MongoDB]
+    DB --> R
+    S --> C
+    C --> UI
+    WS[SocketIO Events] --> UI
 ```
 
 ## 4.5 File upload workflow
