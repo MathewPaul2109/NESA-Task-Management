@@ -24,7 +24,7 @@ const Login = () => {
     }
 
     if (isSuccess || user) {
-      if (user.role === 'Admin') {
+      if (user.role === 'Admin' || user.role === 'Project Manager') {
         navigate('/admin/dashboard');
       } else {
         navigate('/user/dashboard');

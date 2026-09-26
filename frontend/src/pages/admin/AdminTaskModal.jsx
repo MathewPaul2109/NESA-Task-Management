@@ -4,6 +4,7 @@ import { createTask } from '../../features/tasks/taskSlice';
 import api from '../../services/api';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import RichTextEditor from '../../components/RichTextEditor';
 
 const AdminTaskModal = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
@@ -75,8 +76,12 @@ const AdminTaskModal = ({ isOpen, onClose }) => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea required rows="2" className="w-full border rounded-md p-2 resize-none" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})}></textarea>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description / Instructions</label>
+            <RichTextEditor
+              value={formData.description}
+              onChange={(value) => setFormData({ ...formData, description: value })}
+              placeholder="Describe what needs to be done, acceptance criteria, links..."
+            />
           </div>
 
           <div>
@@ -97,7 +102,7 @@ const AdminTaskModal = ({ isOpen, onClose }) => {
               value={formData.assignedTo} 
               onChange={handleUserSelect}
             >
-              {users.filter(u => u.role !== 'Admin').map(u => (
+              {users.filter(u => u.role === 'User').map(u => (
                 <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
               ))}
             </select>

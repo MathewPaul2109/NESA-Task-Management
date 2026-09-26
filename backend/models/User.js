@@ -9,17 +9,26 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: true,
+    required: [true, 'Please add an email'],
     unique: true,
+    match: [
+      /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
+      'Please add a valid email address',
+    ],
   },
   password: {
     type: String,
     required: true,
+    select: false,
   },
   role: {
     type: String,
     enum: ['Admin', 'Project Manager', 'User'],
     default: 'User',
+  },
+  isArchived: {
+    type: Boolean,
+    default: false,
   },
   resetPasswordToken: String,
   resetPasswordExpire: Date,

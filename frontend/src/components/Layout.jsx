@@ -13,7 +13,7 @@ const Layout = () => {
       <Navbar />
       <div className="flex flex-1 overflow-hidden">
         {user?.role === 'Admin' || user?.role === 'Project Manager' ? <AdminSidebar /> : <UserSidebar />}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-hidden flex flex-col p-4">
           <Outlet />
         </main>
       </div>

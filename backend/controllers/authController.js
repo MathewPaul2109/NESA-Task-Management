@@ -51,7 +51,9 @@ const getMe = async (req, res) => {
 // @access  Private/Admin
 const getUsers = async (req, res) => {
   try {
-    const users = await AuthService.getUsers();
+    const isArchived = req.query.archived === 'true';
+    const query = isArchived ? { isArchived: true } : { isArchived: { $ne: true } };
+    const users = await AuthService.getUsers(query);
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
@@ -84,6 +86,36 @@ const updateUserDetails = async (req, res) => {
   try {
     const user = await AuthService.updateUserDetails(req.user.id, req.params.id, req.body);
     res.json(user);
+  } catch (error) {
+    if (error.message === 'User not found') {
+      return res.status(404).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
+// @desc    Delete user
+// @route   DELETE /api/auth/users/:id
+// @access  Private/Admin
+const deleteUser = async (req, res) => {
+  try {
+    const result = await AuthService.deleteUser(req.user.id, req.params.id);
+    res.json(result);
+  } catch (error) {
+    if (error.message === 'User not found') {
+      return res.status(404).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
+// @desc    Restore user
+// @route   PUT /api/auth/users/:id/restore
+// @access  Private/Admin
+const restoreUser = async (req, res) => {
+  try {
+    const result = await AuthService.restoreUser(req.user.id, req.params.id);
+    res.json(result);
   } catch (error) {
     if (error.message === 'User not found') {
       return res.status(404).json({ message: error.message });
@@ -129,6 +161,8 @@ module.exports = {
   getUsers,
   updateUserRole,
   updateUserDetails,
+  deleteUser,
+  restoreUser,
   forgotPassword,
   resetPassword
 };

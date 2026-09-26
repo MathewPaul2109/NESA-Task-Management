@@ -23,14 +23,14 @@ const DroppableColumn = ({ id, children, label, count }) => {
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-lg p-4 w-80 flex-shrink-0 flex flex-col shadow-sm transition-colors ${
+      className={`rounded-lg p-3 flex-1 min-w-0 flex flex-col shadow-sm transition-colors ${
         isOver ? 'bg-blue-50 ring-2 ring-blue-300' : 'bg-gray-100'
       }`}
     >
-      <h3 className="font-semibold text-gray-700 mb-4">
-        {label} <span className="text-gray-400 text-sm ml-2">({count})</span>
+      <h3 className="font-semibold text-gray-700 mb-3 text-sm">
+        {label} <span className="text-gray-400 text-xs ml-1">({count})</span>
       </h3>
-      <div className="flex-1 overflow-y-auto space-y-3">
+      <div className="flex-1 overflow-y-auto space-y-2">
         {children}
       </div>
     </div>
@@ -65,7 +65,7 @@ const DraggableCard = ({ task, onOpen, getDueDateStatus, dispatch }) => {
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-white p-4 rounded shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow relative border-l-4 ${
+      className={`bg-white p-3 rounded shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow relative border-l-4 ${
         isDragging       ? 'opacity-40 shadow-lg' :
         dueDateStatus === 'overdue'   ? 'border-l-red-500' :
         dueDateStatus === 'due-soon'  ? 'border-l-amber-400' :
@@ -85,7 +85,7 @@ const DraggableCard = ({ task, onOpen, getDueDateStatus, dispatch }) => {
 
         {/* Due date warning badge */}
         {dueDateStatus && (
-          <div className={`flex items-center gap-1 text-xs font-medium mb-2 ${
+          <div className={`flex items-center gap-1 text-xs font-medium mb-1.5 ${
             dueDateStatus === 'overdue' ? 'text-red-600' : 'text-amber-600'
           }`}>
             {dueDateStatus === 'overdue'
@@ -98,25 +98,25 @@ const DraggableCard = ({ task, onOpen, getDueDateStatus, dispatch }) => {
           </div>
         )}
 
-        <h4 className="font-medium text-gray-900 mb-1">{task.title}</h4>
-        <p className="text-sm text-gray-500 line-clamp-2 mb-3">{task.description}</p>
+        <h4 className="font-medium text-gray-900 text-sm mb-0.5">{task.title}</h4>
+        <p className="text-xs text-gray-500 line-clamp-2 mb-2">{task.description}</p>
 
         {/* Progress Bar */}
-        <div className="mb-3">
-          <div className="flex justify-between text-xs text-gray-500 mb-1">
+        <div className="mb-2">
+          <div className="flex justify-between text-xs text-gray-400 mb-0.5">
             <span>Progress</span>
             <span>{progress}%</span>
           </div>
-          <div className="w-full bg-gray-100 rounded-full h-1.5">
+          <div className="w-full bg-gray-100 rounded-full h-1">
             <div
-              className={`h-1.5 rounded-full ${progress === 100 ? 'bg-green-500' : 'bg-blue-500'} transition-all duration-300`}
+              className={`h-1 rounded-full ${progress === 100 ? 'bg-green-500' : 'bg-blue-500'} transition-all duration-300`}
               style={{ width: `${progress}%` }}
             />
           </div>
         </div>
 
         <div className="flex justify-between items-center text-xs">
-          <span className={`px-2 py-1 rounded-full ${
+          <span className={`px-1.5 py-0.5 rounded-full text-xs ${
             task.priority === 'High'   ? 'bg-red-100 text-red-700' :
             task.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
             'bg-green-100 text-green-700'
@@ -126,7 +126,7 @@ const DraggableCard = ({ task, onOpen, getDueDateStatus, dispatch }) => {
 
           {/* Quick status select — stops propagation so drag doesn't fire */}
           <select
-            className="border border-gray-200 rounded p-1 text-xs text-gray-600 bg-gray-50 outline-none focus:border-blue-300 relative z-20"
+            className="border border-gray-200 rounded p-0.5 text-xs text-gray-600 bg-gray-50 outline-none focus:border-blue-300 relative z-20"
             value={task.status}
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
@@ -249,15 +249,15 @@ const UserDashboard = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-800">My Tasks</h2>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-xl font-bold text-gray-800">My Tasks</h2>
         <p className="text-xs text-gray-400">Drag cards between columns to update status</p>
       </div>
 
       {!isLoading && pendingCount > 0 && (
-        <div className="mb-6 flex items-center gap-3 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg shadow-sm">
-          <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
-          <p className="text-sm">
+        <div className="mb-3 flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-800 px-3 py-2 rounded-lg shadow-sm">
+          <AlertCircle className="h-4 w-4 text-blue-600 flex-shrink-0" />
+          <p className="text-xs">
             You have <strong className="font-semibold">{pendingCount} pending task{pendingCount > 1 ? 's' : ''}</strong> that {pendingCount > 1 ? 'require' : 'requires'} your attention.
           </p>
         </div>
@@ -265,41 +265,41 @@ const UserDashboard = () => {
 
       {/* Stat Cards */}
       {!isLoading && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
-            <div className="bg-blue-100 p-2.5 rounded-lg text-blue-600 flex-shrink-0">
-              <ListTodo className="h-5 w-5" />
+        <div className="grid grid-cols-4 gap-3 mb-3">
+          <div className="bg-white px-3 py-2.5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-2.5">
+            <div className="bg-blue-100 p-2 rounded-lg text-blue-600 flex-shrink-0">
+              <ListTodo className="h-4 w-4" />
             </div>
             <div>
               <p className="text-xs text-gray-500 font-medium">Total Tasks</p>
-              <p className="text-2xl font-bold text-gray-800">{myTasks.length}</p>
+              <p className="text-xl font-bold text-gray-800">{myTasks.length}</p>
             </div>
           </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
-            <div className="bg-amber-100 p-2.5 rounded-lg text-amber-600 flex-shrink-0">
-              <Loader className="h-5 w-5" />
+          <div className="bg-white px-3 py-2.5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-2.5">
+            <div className="bg-amber-100 p-2 rounded-lg text-amber-600 flex-shrink-0">
+              <Loader className="h-4 w-4" />
             </div>
             <div>
               <p className="text-xs text-gray-500 font-medium">In Progress</p>
-              <p className="text-2xl font-bold text-gray-800">{columns['In Progress'].length}</p>
+              <p className="text-xl font-bold text-gray-800">{columns['In Progress'].length}</p>
             </div>
           </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
-            <div className="bg-red-100 p-2.5 rounded-lg text-red-500 flex-shrink-0">
-              <CalendarClock className="h-5 w-5" />
+          <div className="bg-white px-3 py-2.5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-2.5">
+            <div className="bg-red-100 p-2 rounded-lg text-red-500 flex-shrink-0">
+              <CalendarClock className="h-4 w-4" />
             </div>
             <div>
               <p className="text-xs text-gray-500 font-medium">Due Today</p>
-              <p className="text-2xl font-bold text-gray-800">{dueTodayCount}</p>
+              <p className="text-xl font-bold text-gray-800">{dueTodayCount}</p>
             </div>
           </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
-            <div className="bg-green-100 p-2.5 rounded-lg text-green-600 flex-shrink-0">
-              <CheckCircle2 className="h-5 w-5" />
+          <div className="bg-white px-3 py-2.5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-2.5">
+            <div className="bg-green-100 p-2 rounded-lg text-green-600 flex-shrink-0">
+              <CheckCircle2 className="h-4 w-4" />
             </div>
             <div>
               <p className="text-xs text-gray-500 font-medium">Completed</p>
-              <p className="text-2xl font-bold text-gray-800">{columns['Done'].length}</p>
+              <p className="text-xl font-bold text-gray-800">{columns['Done'].length}</p>
             </div>
           </div>
         </div>
@@ -313,7 +313,7 @@ const UserDashboard = () => {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex flex-1 gap-4 overflow-x-auto pb-4">
+          <div className="flex flex-1 gap-3 min-h-0">
             {COLUMNS.map(status => (
               <DroppableColumn
                 key={status}

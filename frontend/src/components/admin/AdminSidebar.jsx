@@ -28,9 +28,9 @@ const AdminSidebar = () => {
             </NavLink>
           </>
         )}
-        <NavLink to="/admin/archived-tasks" className={({isActive}) => `flex items-center gap-3 px-3 py-2 rounded-md transition ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+        <NavLink to="/admin/archive" className={({isActive}) => `flex items-center gap-3 px-3 py-2 rounded-md transition ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
           <Archive className="h-5 w-5" />
-          <span className="font-medium">Archived Tasks</span>
+          <span className="font-medium">Archive</span>
         </NavLink>
       </nav>
       <div className="p-4 border-t border-gray-100">

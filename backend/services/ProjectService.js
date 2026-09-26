@@ -18,6 +18,13 @@ class ProjectService {
           { _id: { $in: projectIdsFromTasks } }
         ] 
       });
+    } else if (user.role === 'Project Manager') {
+      filters.push({
+        $or: [
+          { manager: user._id },
+          { members: user._id },
+        ]
+      });
     }
 
     if (queryParams.search) {
@@ -62,11 +69,11 @@ class ProjectService {
   }
 
   async createProject(user, projectData) {
-    const { title, description, members, status } = projectData;
+    const { title, description, members, status, manager } = projectData;
     const project = await ProjectRepository.createProject({
       title,
       description,
-      manager: user._id, 
+      manager: manager || user._id,
       members,
       status
     });
@@ -84,6 +91,7 @@ class ProjectService {
     project.description = updateData.description || project.description;
     project.members = updateData.members || project.members;
     project.status = updateData.status || project.status;
+    if (updateData.manager) project.manager = updateData.manager;
 
     const updatedProject = await ProjectRepository.updateProject(project);
     await logAction('PROJECT_UPDATED', user._id, { title: updatedProject.title, status: updatedProject.status }, updatedProject._id);
