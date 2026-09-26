@@ -9,6 +9,9 @@ const getTasks = async (req, res) => {
     const tasks = await TaskService.getTasksForUser(req.user, projectId);
     res.json(tasks);
   } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
@@ -21,8 +24,8 @@ const createTask = async (req, res) => {
     const task = await TaskService.createTask(req.user, req.body, req.io);
     res.status(201).json(task);
   } catch (error) {
-    if (error.message === 'Project not found') {
-      return res.status(404).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -36,11 +39,8 @@ const updateTask = async (req, res) => {
     const updatedTask = await TaskService.updateTask(req.user, req.params.id, req.body, req.io);
     res.json(updatedTask);
   } catch (error) {
-    if (error.message === 'Task not found') {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message === 'Not authorized to update this task') {
-      return res.status(403).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -54,8 +54,8 @@ const deleteTask = async (req, res) => {
     await TaskService.deleteTask(req.user, req.params.id);
     res.json({ message: 'Task removed' });
   } catch (error) {
-    if (error.message === 'Task not found') {
-      return res.status(404).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -69,11 +69,8 @@ const uploadTaskFile = async (req, res) => {
     const updatedTask = await TaskService.uploadTaskFile(req.params.id, req.file, req.io);
     res.json(updatedTask);
   } catch (error) {
-    if (error.message === 'Task not found') {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message === 'No file uploaded') {
-      return res.status(400).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -87,6 +84,9 @@ const getArchivedTasks = async (req, res) => {
     const tasks = await TaskService.getArchivedTasks();
     res.json(tasks);
   } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
@@ -99,11 +99,8 @@ const archiveTask = async (req, res) => {
     const archivedTask = await TaskService.archiveTask(req.user, req.params.id, req.io);
     res.json(archivedTask);
   } catch (error) {
-    if (error.message === 'Task not found') {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message === 'Only completed tasks can be archived') {
-      return res.status(400).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -117,11 +114,8 @@ const restoreTask = async (req, res) => {
     const restoredTask = await TaskService.restoreTask(req.user, req.params.id, req.io);
     res.json(restoredTask);
   } catch (error) {
-    if (error.message === 'Task not found') {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message === 'Task is not archived') {
-      return res.status(400).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }

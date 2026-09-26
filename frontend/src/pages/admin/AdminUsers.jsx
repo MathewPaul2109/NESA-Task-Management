@@ -5,6 +5,7 @@ import api from '../../services/api';
 import { User, Mail, ShieldAlert, CheckCircle2, Clock, Loader2, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import EditUserModal from './EditUserModal';
+import AddUserModal from './AddUserModal';
 import TaskModal from '../user/TaskModal';
 
 const AdminUsers = () => {
@@ -16,6 +17,7 @@ const AdminUsers = () => {
   
   // Modals state
   const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState(null);
   
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -89,9 +91,17 @@ const AdminUsers = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
-        <p className="text-gray-500 mt-1">Overview of all registered users and their assigned tasks</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
+          <p className="text-gray-500 mt-1">Overview of all registered users and their assigned tasks</p>
+        </div>
+        <button 
+          onClick={() => setIsAddUserModalOpen(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition flex items-center gap-2"
+        >
+          Add User
+        </button>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col overflow-hidden">
@@ -217,6 +227,12 @@ const AdminUsers = () => {
         onClose={() => { setIsEditUserModalOpen(false); setUserToEdit(null); }} 
         user={userToEdit} 
         onSave={handleUpdateUserDetails} 
+      />
+
+      <AddUserModal
+        isOpen={isAddUserModalOpen}
+        onClose={() => setIsAddUserModalOpen(false)}
+        onUserAdded={(newUser) => setUsers([...users, newUser])}
       />
 
       <TaskModal 

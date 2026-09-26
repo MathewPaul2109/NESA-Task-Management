@@ -8,8 +8,11 @@ const registerUser = async (req, res) => {
     const user = await AuthService.registerUser(req.body);
     res.status(201).json(user);
   } catch (error) {
-    if (error.message === 'Please add all required fields' || error.message === 'User already exists' || error.message === 'Invalid user data') {
-      return res.status(400).json({ message: error.message });
+    if (error.message === 'User already exists') {
+      return res.status(409).json({ message: error.message });
+    }
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -24,8 +27,8 @@ const loginUser = async (req, res) => {
     const user = await AuthService.loginUser(email, password);
     res.json(user);
   } catch (error) {
-    if (error.message === 'Invalid credentials') {
-      return res.status(401).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -39,8 +42,8 @@ const getMe = async (req, res) => {
     const user = await AuthService.getMe(req.user.id);
     res.json(user);
   } catch (error) {
-    if (error.message === 'User not found') {
-      return res.status(404).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -69,11 +72,8 @@ const updateUserRole = async (req, res) => {
     const user = await AuthService.updateUserRole(req.user.id, req.params.id, role);
     res.json(user);
   } catch (error) {
-    if (error.message === 'User not found') {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message === 'Invalid role') {
-      return res.status(400).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -87,8 +87,8 @@ const updateUserDetails = async (req, res) => {
     const user = await AuthService.updateUserDetails(req.user.id, req.params.id, req.body);
     res.json(user);
   } catch (error) {
-    if (error.message === 'User not found') {
-      return res.status(404).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -102,8 +102,8 @@ const deleteUser = async (req, res) => {
     const result = await AuthService.deleteUser(req.user.id, req.params.id);
     res.json(result);
   } catch (error) {
-    if (error.message === 'User not found') {
-      return res.status(404).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -117,8 +117,8 @@ const restoreUser = async (req, res) => {
     const result = await AuthService.restoreUser(req.user.id, req.params.id);
     res.json(result);
   } catch (error) {
-    if (error.message === 'User not found') {
-      return res.status(404).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -132,8 +132,8 @@ const forgotPassword = async (req, res) => {
     const result = await AuthService.forgotPassword(req.body.email);
     res.status(200).json(result);
   } catch (error) {
-    if (error.message === 'There is no user with that email') {
-      return res.status(404).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: error.message });
   }
@@ -147,8 +147,8 @@ const resetPassword = async (req, res) => {
     const result = await AuthService.resetPassword(req.params.token, req.body.password);
     res.status(200).json(result);
   } catch (error) {
-    if (error.message === 'Invalid token') {
-      return res.status(400).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }

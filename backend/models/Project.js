@@ -22,6 +22,10 @@ const projectSchema = new mongoose.Schema({
     type: String,
     enum: ['Active', 'Completed', 'On Hold'],
     default: 'Active',
+  },
+  isArchived: {
+    type: Boolean,
+    default: false,
   }
 }, { timestamps: true });
 

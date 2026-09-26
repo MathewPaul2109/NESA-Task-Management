@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getProjects } from '../../features/projects/projectSlice';
+import { getProjects, deleteProject } from '../../features/projects/projectSlice';
 import { getTasks, archiveTask } from '../../features/tasks/taskSlice';
-import { FolderGit2, Users, CheckCircle2, Plus, MessageSquare, Edit, ListTodo, Search, Archive } from 'lucide-react';
+import { FolderGit2, Users, CheckCircle2, Plus, MessageSquare, Edit, ListTodo, Search, Archive, Trash2 } from 'lucide-react';
 import ProjectModal from './ProjectModal';
 import AdminTaskModal from './AdminTaskModal';
 import ProjectChatDrawer from '../../components/ProjectChatDrawer';
@@ -54,14 +54,25 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleArchiveProject = async (e, projectId, projectTitle) => {
+    e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to archive "${projectTitle}"?`)) return;
+    const result = await dispatch(deleteProject(projectId));
+    if (deleteProject.fulfilled.match(result)) {
+      toast.success(`"${projectTitle}" archived successfully.`);
+    } else {
+      toast.error(result.payload || 'Failed to archive project.');
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h2 className="text-2xl font-bold text-gray-800">Admin Overview</h2>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <button 
             onClick={() => setIsTaskModalOpen(true)}
-            className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded shadow-sm hover:bg-gray-50 transition flex items-center gap-2"
+            className="bg-white border border-gray-300 text-gray-700 px-3 sm:px-4 py-2 rounded shadow-sm hover:bg-gray-50 transition flex items-center gap-2 text-sm sm:text-base"
           >
             <Plus className="h-4 w-4" /> Assign Task
           </button>
@@ -70,7 +81,7 @@ const AdminDashboard = () => {
               setProjectToEdit(null);
               setIsProjectModalOpen(true);
             }}
-            className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition flex items-center gap-2"
+            className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded shadow hover:bg-blue-700 transition flex items-center gap-2 text-sm sm:text-base"
           >
             <Plus className="h-4 w-4" /> New Project
           </button>
@@ -107,22 +118,23 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden mb-8" style={{ minHeight: '400px' }}>
-        <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <span className="font-semibold text-gray-700">Recent Projects</span>
-          <div className="flex gap-3">
-            <div className="relative">
+      <div className={`grid grid-cols-1 gap-8 ${completedTasks.length > 0 ? 'xl:grid-cols-2' : ''}`}>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden h-full">
+          <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <span className="font-semibold text-gray-700 mb-2 sm:mb-0">Recent Projects</span>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+            <div className="relative w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input 
                 type="text" 
                 placeholder="Search projects..." 
-                className="pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 outline-none w-64"
+                className="pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 outline-none w-full sm:w-64"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <select 
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none w-full sm:w-auto"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -209,6 +221,12 @@ const AdminDashboard = () => {
                         >
                           <MessageSquare className="h-4 w-4" /> Chat
                         </button>
+                        <button 
+                          onClick={(e) => handleArchiveProject(e, project._id, project.title)}
+                          className="inline-flex items-center gap-1 text-red-500 hover:text-red-700 transition font-medium text-sm"
+                        >
+                          <Archive className="h-4 w-4" /> Archive
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -219,10 +237,10 @@ const AdminDashboard = () => {
         </div>
       </div>
       
-      {/* Completed Tasks Section */}
-      {(isTasksLoading || completedTasks.length > 0) && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden" style={{ minHeight: '300px' }}>
-          <div className="p-4 border-b border-gray-100 font-semibold text-gray-700 flex items-center justify-between">
+        {/* Completed Tasks Section */}
+        {(isTasksLoading || completedTasks.length > 0) && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden h-full">
+            <div className="p-4 border-b border-gray-100 font-semibold text-gray-700 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ListTodo className="h-5 w-5 text-green-500" />
               Completed Tasks
@@ -273,6 +291,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+      </div>
       
       <ProjectModal 
         isOpen={isProjectModalOpen} 
