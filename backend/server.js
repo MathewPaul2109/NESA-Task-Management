@@ -63,6 +63,10 @@ app.get('/', (req, res) => {
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
   
+  socket.on('join_project', (projectId) => {
+    socket.join(projectId);
+  });
+
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });

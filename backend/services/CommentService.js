@@ -25,7 +25,7 @@ class CommentService {
     await createdComment.populate('task', 'title');
 
     io.emit(`new_comment_${taskId}`, createdComment);
-    io.emit(`new_project_message_${task.project}`, createdComment);
+    io.to(task.project.toString()).emit(`new_project_message_${task.project}`, createdComment);
 
     return createdComment;
   }
@@ -42,7 +42,7 @@ class CommentService {
     });
 
     await createdComment.populate('author', 'name email');
-    io.emit(`new_project_message_${projectId}`, createdComment);
+    io.to(projectId.toString()).emit(`new_project_message_${projectId}`, createdComment);
 
     return createdComment;
   }

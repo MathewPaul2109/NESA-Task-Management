@@ -16,6 +16,8 @@ const ProjectChatDrawer = ({ isOpen, onClose, project }) => {
       dispatch(getProjectComments(project._id));
       
       const socket = io('http://localhost:5000');
+      socket.emit('join_project', project._id);
+      
       socket.on(`new_project_message_${project._id}`, (message) => {
         dispatch(appendComment(message));
       });
