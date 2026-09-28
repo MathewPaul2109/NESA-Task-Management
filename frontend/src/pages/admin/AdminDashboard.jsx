@@ -66,7 +66,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="min-h-full flex flex-col">
       <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h2 className="text-2xl font-bold text-gray-800">Admin Overview</h2>
         <div className="flex flex-wrap gap-2 sm:gap-3">

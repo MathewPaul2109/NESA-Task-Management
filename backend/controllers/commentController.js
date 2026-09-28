@@ -8,6 +8,9 @@ const getComments = async (req, res) => {
     const comments = await CommentService.getComments(req.params.taskId);
     res.json(comments);
   } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
@@ -20,8 +23,8 @@ const addComment = async (req, res) => {
     const comment = await CommentService.addComment(req.user, req.params.taskId, req.body.content, req.io);
     res.status(201).json(comment);
   } catch (error) {
-    if (error.message === 'Task not found') {
-      return res.status(404).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -35,6 +38,9 @@ const getProjectComments = async (req, res) => {
     const comments = await CommentService.getProjectComments(req.params.projectId);
     res.json(comments);
   } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
@@ -47,6 +53,9 @@ const addProjectComment = async (req, res) => {
     const comment = await CommentService.addProjectComment(req.user, req.params.projectId, req.body.content, req.io);
     res.status(201).json(comment);
   } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
