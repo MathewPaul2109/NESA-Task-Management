@@ -39,6 +39,16 @@ export const updateProject = createAsyncThunk('projects/update', async ({ id, pr
   }
 });
 
+export const deleteProject = createAsyncThunk('projects/delete', async (id, thunkAPI) => {
+  try {
+    await api.delete(`/projects/${id}`);
+    return id; // return id so we can remove it from state
+  } catch (error) {
+    const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
 export const projectSlice = createSlice({
   name: 'project',
   initialState,
@@ -78,6 +88,9 @@ export const projectSlice = createSlice({
         if (index !== -1) {
           state.projects[index] = action.payload;
         }
+      })
+      .addCase(deleteProject.fulfilled, (state, action) => {
+        state.projects = state.projects.filter(p => p._id !== action.payload);
       });
   },
 });

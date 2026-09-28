@@ -23,7 +23,7 @@ const DroppableColumn = ({ id, children, label, count }) => {
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-lg p-3 flex-1 min-w-0 flex flex-col shadow-sm transition-colors ${
+      className={`rounded-lg p-3 h-full min-h-0 flex flex-col shadow-sm transition-colors ${
         isOver ? 'bg-blue-50 ring-2 ring-blue-300' : 'bg-gray-100'
       }`}
     >
@@ -98,8 +98,8 @@ const DraggableCard = ({ task, onOpen, getDueDateStatus, dispatch }) => {
           </div>
         )}
 
-        <h4 className="font-medium text-gray-900 text-sm mb-0.5">{task.title}</h4>
-        <p className="text-xs text-gray-500 line-clamp-2 mb-2">{task.description}</p>
+        <h4 className="font-medium text-gray-900 text-sm mb-0.5 break-words">{task.title}</h4>
+        <p className="text-xs text-gray-500 line-clamp-2 mb-2 break-words">{task.description}</p>
 
         {/* Progress Bar */}
         <div className="mb-2">
@@ -265,7 +265,7 @@ const UserDashboard = () => {
 
       {/* Stat Cards */}
       {!isLoading && (
-        <div className="grid grid-cols-4 gap-3 mb-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
           <div className="bg-white px-3 py-2.5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-2.5">
             <div className="bg-blue-100 p-2 rounded-lg text-blue-600 flex-shrink-0">
               <ListTodo className="h-4 w-4" />
@@ -313,7 +313,7 @@ const UserDashboard = () => {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex flex-1 gap-3 min-h-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1 min-h-0 lg:overflow-hidden pb-4">
             {COLUMNS.map(status => (
               <DroppableColumn
                 key={status}

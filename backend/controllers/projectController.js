@@ -8,6 +8,9 @@ const getProjects = async (req, res) => {
     const projects = await ProjectService.getProjectsForUser(req.user, req.query);
     res.json(projects);
   } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
@@ -20,11 +23,8 @@ const getProjectById = async (req, res) => {
     const project = await ProjectService.getProjectById(req.user, req.params.id);
     res.json(project);
   } catch (error) {
-    if (error.message === 'Project not found') {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message === 'Not authorized to view this project') {
-      return res.status(403).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -38,6 +38,9 @@ const createProject = async (req, res) => {
     const project = await ProjectService.createProject(req.user, req.body);
     res.status(201).json(project);
   } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
@@ -50,8 +53,8 @@ const updateProject = async (req, res) => {
     const updatedProject = await ProjectService.updateProject(req.user, req.params.id, req.body);
     res.json(updatedProject);
   } catch (error) {
-    if (error.message === 'Project not found') {
-      return res.status(404).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -65,8 +68,23 @@ const deleteProject = async (req, res) => {
     await ProjectService.deleteProject(req.user, req.params.id);
     res.json({ message: 'Project removed' });
   } catch (error) {
-    if (error.message === 'Project not found') {
-      return res.status(404).json({ message: error.message });
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
+// @desc    Restore a project
+// @route   PUT /api/projects/:id/restore
+// @access  Private (Admin only)
+const restoreProject = async (req, res) => {
+  try {
+    await ProjectService.restoreProject(req.user, req.params.id);
+    res.json({ message: 'Project restored' });
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -77,5 +95,6 @@ module.exports = {
   getProjectById,
   createProject,
   updateProject,
-  deleteProject
+  deleteProject,
+  restoreProject
 };

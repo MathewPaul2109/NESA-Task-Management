@@ -11,12 +11,17 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: '*' }
+  cors: { 
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
+  }
 });
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+}));
 app.use(helmet({ crossOriginResourcePolicy: false })); // Allow cross-origin images
 
 // Serve uploads folder statically

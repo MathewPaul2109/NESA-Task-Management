@@ -41,7 +41,9 @@ class TaskService {
     
     const projectExists = await ProjectRepository.findProjectById(project);
     if (!projectExists) {
-      throw new Error('Project not found');
+      const err = new Error('Project not found');
+      err.statusCode = 404;
+      throw err;
     }
 
     const createdTask = await TaskRepository.createTask({
@@ -80,11 +82,15 @@ class TaskService {
   async updateTask(user, taskId, updateData, io) {
     const task = await TaskRepository.findTaskById(taskId);
     if (!task) {
-      throw new Error('Task not found');
+      const err = new Error('Task not found');
+      err.statusCode = 404;
+      throw err;
     }
 
     if (user.role === 'User' && !task.assignedTo.includes(user._id)) {
-      throw new Error('Not authorized to update this task');
+      const err = new Error('Not authorized to update this task');
+      err.statusCode = 403;
+      throw err;
     }
 
     if (user.role === 'User') {
@@ -108,7 +114,9 @@ class TaskService {
   async deleteTask(user, taskId) {
     const task = await TaskRepository.findTaskById(taskId);
     if (!task) {
-      throw new Error('Task not found');
+      const err = new Error('Task not found');
+      err.statusCode = 404;
+      throw err;
     }
     await logAction('TASK_DELETED', user._id, { title: task.title }, task._id);
     await TaskRepository.deleteTask(task);
@@ -117,10 +125,14 @@ class TaskService {
   async archiveTask(user, taskId, io) {
     const task = await TaskRepository.findTaskById(taskId);
     if (!task) {
-      throw new Error('Task not found');
+      const err = new Error('Task not found');
+      err.statusCode = 404;
+      throw err;
     }
     if (task.status !== 'Done') {
-      throw new Error('Only completed tasks can be archived');
+      const err = new Error('Only completed tasks can be archived');
+      err.statusCode = 400;
+      throw err;
     }
 
     const archivedTask = await TaskRepository.archiveTask(task);
@@ -137,10 +149,14 @@ class TaskService {
   async restoreTask(user, taskId, io) {
     const task = await TaskRepository.findTaskById(taskId);
     if (!task) {
-      throw new Error('Task not found');
+      const err = new Error('Task not found');
+      err.statusCode = 404;
+      throw err;
     }
     if (!task.isArchived) {
-      throw new Error('Task is not archived');
+      const err = new Error('Task is not archived');
+      err.statusCode = 400;
+      throw err;
     }
 
     const restoredTask = await TaskRepository.restoreTask(task);
@@ -153,10 +169,14 @@ class TaskService {
   async uploadTaskFile(taskId, file, io) {
     const task = await TaskRepository.findTaskById(taskId);
     if (!task) {
-      throw new Error('Task not found');
+      const err = new Error('Task not found');
+      err.statusCode = 404;
+      throw err;
     }
     if (!file) {
-      throw new Error('No file uploaded');
+      const err = new Error('No file uploaded');
+      err.statusCode = 400;
+      throw err;
     }
 
     const attachment = {

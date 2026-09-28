@@ -6,6 +6,12 @@ class ProjectService {
   async getProjectsForUser(user, queryParams = {}) {
     let query = {};
     const filters = [];
+    
+    if (queryParams.archived === 'true') {
+      filters.push({ isArchived: true });
+    } else {
+      filters.push({ isArchived: { $ne: true } });
+    }
 
     if (user.role === 'User') {
       const assignedTasks = await TaskRepository.findTasksAssignedToUser(user._id);
@@ -56,13 +62,17 @@ class ProjectService {
   async getProjectById(user, projectId) {
     const project = await ProjectRepository.findProjectById(projectId);
     if (!project) {
-      throw new Error('Project not found');
+      const err = new Error('Project not found');
+      err.statusCode = 404;
+      throw err;
     }
 
     if (user.role === 'User' && 
         project.manager._id.toString() !== user._id.toString() && 
         !project.members.some(member => member._id.toString() === user._id.toString())) {
-      throw new Error('Not authorized to view this project');
+      const err = new Error('Not authorized to view this project');
+      err.statusCode = 403;
+      throw err;
     }
 
     return project;
@@ -84,7 +94,9 @@ class ProjectService {
   async updateProject(user, projectId, updateData) {
     const project = await ProjectRepository.findProjectById(projectId);
     if (!project) {
-      throw new Error('Project not found');
+      const err = new Error('Project not found');
+      err.statusCode = 404;
+      throw err;
     }
 
     project.title = updateData.title || project.title;
@@ -102,10 +114,25 @@ class ProjectService {
   async deleteProject(user, projectId) {
     const project = await ProjectRepository.findProjectById(projectId);
     if (!project) {
-      throw new Error('Project not found');
+      const err = new Error('Project not found');
+      err.statusCode = 404;
+      throw err;
     }
-    await logAction('PROJECT_DELETED', user._id, { title: project.title }, project._id);
-    await ProjectRepository.deleteProject(project);
+    await logAction('PROJECT_ARCHIVED', user._id, { title: project.title }, project._id);
+    project.isArchived = true;
+    await ProjectRepository.updateProject(project);
+  }
+
+  async restoreProject(user, projectId) {
+    const project = await ProjectRepository.findProjectById(projectId);
+    if (!project) {
+      const err = new Error('Project not found');
+      err.statusCode = 404;
+      throw err;
+    }
+    await logAction('PROJECT_RESTORED', user._id, { title: project.title }, project._id);
+    project.isArchived = false;
+    await ProjectRepository.updateProject(project);
   }
 }
 

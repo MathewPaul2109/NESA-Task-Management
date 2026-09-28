@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getArchivedTasks, restoreTask } from '../../features/tasks/taskSlice';
-import { Archive, User, FolderOpen, RotateCcw, Mail } from 'lucide-react';
+import { Archive, User, FolderOpen, RotateCcw, Mail, FolderGit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
 
@@ -15,12 +15,28 @@ const AdminArchive = () => {
   const dispatch = useDispatch();
   const { archivedTasks, isArchivedLoading } = useSelector((state) => state.tasks);
   
-  const [activeTab, setActiveTab] = useState('tasks');
+  const [activeTab, setActiveTab] = useState('projects'); // Default to projects tab
+  
+  const [archivedProjects, setArchivedProjects] = useState([]);
+  const [isProjectsLoading, setIsProjectsLoading] = useState(false);
+  
   const [archivedUsers, setArchivedUsers] = useState([]);
   const [isUsersLoading, setIsUsersLoading] = useState(false);
 
   useEffect(() => {
     dispatch(getArchivedTasks());
+    
+    const fetchArchivedProjects = async () => {
+      try {
+        setIsProjectsLoading(true);
+        const res = await api.get('/projects?archived=true');
+        setArchivedProjects(res.data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsProjectsLoading(false);
+      }
+    };
     
     const fetchArchivedUsers = async () => {
       try {
@@ -34,6 +50,7 @@ const AdminArchive = () => {
       }
     };
     
+    fetchArchivedProjects();
     fetchArchivedUsers();
   }, [dispatch]);
 
@@ -61,6 +78,19 @@ const AdminArchive = () => {
     }
   };
 
+  const handleRestoreProject = async (e, projectId, projectTitle) => {
+    e.stopPropagation();
+    if (!window.confirm(`Restore project "${projectTitle}"? It will move back to the active dashboard.`)) return;
+    try {
+      await api.put(`/projects/${projectId}/restore`);
+      setArchivedProjects(archivedProjects.filter(p => p._id !== projectId));
+      toast.success(`Project "${projectTitle}" restored.`);
+    } catch (error) {
+      toast.error('Failed to restore project.');
+      console.error(error);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -77,6 +107,12 @@ const AdminArchive = () => {
       {/* Tabs */}
       <div className="flex gap-4 mb-4 border-b border-gray-200">
         <button 
+          onClick={() => setActiveTab('projects')}
+          className={`pb-2 font-medium transition ${activeTab === 'projects' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          Archived Projects
+        </button>
+        <button 
           onClick={() => setActiveTab('tasks')}
           className={`pb-2 font-medium transition ${activeTab === 'tasks' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
         >
@@ -92,6 +128,52 @@ const AdminArchive = () => {
 
       {/* Content */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col overflow-hidden">
+        {activeTab === 'projects' && (
+          <>
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              <span className="font-semibold text-gray-700">Archived Projects</span>
+              <span className="text-sm text-gray-400">
+                {isProjectsLoading ? '...' : `${archivedProjects.length} project${archivedProjects.length !== 1 ? 's' : ''}`}
+              </span>
+            </div>
+            <div className="overflow-x-auto flex-1">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
+                    <th className="p-4 font-medium">Project Name</th>
+                    <th className="p-4 font-medium">Status</th>
+                    <th className="p-4 font-medium text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isProjectsLoading ? (
+                    <tr><td colSpan="3" className="text-center p-8 text-gray-400">Loading...</td></tr>
+                  ) : archivedProjects.length === 0 ? (
+                    <tr><td colSpan="3" className="text-center p-12 text-gray-400">No archived projects found.</td></tr>
+                  ) : (
+                    archivedProjects.map(project => (
+                      <tr key={project._id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
+                              <FolderGit2 className="h-4 w-4" />
+                            </div>
+                            <span className="font-medium text-gray-800">{project.title}</span>
+                          </div>
+                        </td>
+                        <td className="p-4"><span className="text-sm text-gray-600">{project.status}</span></td>
+                        <td className="p-4 text-right">
+                          <button onClick={(e) => handleRestoreProject(e, project._id, project.title)} className="inline-flex items-center gap-1.5 text-sm text-green-600 hover:text-green-800 font-medium transition"><RotateCcw className="h-4 w-4" /> Restore</button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
         {activeTab === 'tasks' && (
           <>
             <div className="p-4 border-b border-gray-100 flex items-center justify-between">
