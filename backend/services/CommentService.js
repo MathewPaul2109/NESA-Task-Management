@@ -9,7 +9,9 @@ class CommentService {
   async addComment(user, taskId, content, io) {
     const task = await TaskRepository.findTaskById(taskId);
     if (!task) {
-      throw new Error('Task not found');
+      const error = new Error('Task not found');
+      error.statusCode = 404;
+      throw error;
     }
 
     const createdComment = await CommentRepository.createComment({

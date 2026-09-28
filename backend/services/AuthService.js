@@ -151,7 +151,9 @@ class AuthService {
   async deleteUser(adminUserId, targetUserId) {
     const user = await UserRepository.findById(targetUserId);
     if (!user) {
-      throw new Error('User not found');
+      const err = new Error('User not found');
+      err.statusCode = 404;
+      throw err;
     }
 
     user.isArchived = true;
@@ -165,7 +167,9 @@ class AuthService {
   async restoreUser(adminUserId, targetUserId) {
     const user = await UserRepository.findById(targetUserId);
     if (!user) {
-      throw new Error('User not found');
+      const err = new Error('User not found');
+      err.statusCode = 404;
+      throw err;
     }
 
     user.isArchived = false;

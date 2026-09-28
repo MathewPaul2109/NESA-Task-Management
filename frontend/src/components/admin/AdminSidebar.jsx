@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Settings, Activity, Archive } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, Activity, Archive, ListTodo, FolderGit2 } from 'lucide-react';
 import { useSelector } from 'react-redux';
 
 const AdminSidebar = () => {
@@ -16,6 +16,12 @@ const AdminSidebar = () => {
           <LayoutDashboard className="h-5 w-5" />
           <span className="font-medium">Dashboard</span>
         </NavLink>
+        {user?.role === 'Project Manager' && (
+          <NavLink to="/user/projects" className={({isActive}) => `flex items-center gap-3 px-3 py-2 rounded-md transition ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+            <FolderGit2 className="h-5 w-5" />
+            <span className="font-medium">My Projects</span>
+          </NavLink>
+        )}
         {user?.role === 'Admin' && (
           <>
             <NavLink to="/admin/users" className={({isActive}) => `flex items-center gap-3 px-3 py-2 rounded-md transition ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
