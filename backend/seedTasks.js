@@ -37,7 +37,7 @@ const run = async () => {
     const taskData = [
       {
         title: 'Review Frontend Documentation',
-        description: '<p>Please review the newly added frontend components for consistency.</p>',
+        description: 'Please review the newly added frontend components for consistency.</p>',
         project: project._id,
         assignedTo: userIds,
         priority: 'High',
@@ -45,7 +45,7 @@ const run = async () => {
       },
       {
         title: 'Update API Endpoints',
-        description: '<p>Update the user fetching logic across the admin dashboard.</p>',
+        description: 'Update the user fetching logic across the admin dashboard.',
         project: project._id,
         assignedTo: userIds,
         priority: 'Medium',
@@ -53,7 +53,7 @@ const run = async () => {
       },
       {
         title: 'Perform Integration Tests',
-        description: '<p>Run the full e2e suite and report any anomalies before release.</p>',
+        description: 'Run the full e2e suite and report any anomalies before release.',
         project: project._id,
         assignedTo: userIds,
         priority: 'Low',

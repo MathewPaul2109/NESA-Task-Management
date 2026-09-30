@@ -2,11 +2,28 @@ import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { Activity, Clock, ShieldAlert, FolderGit2, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Pagination from '../../components/Pagination';
 
 const AdminLogs = () => {
   const [logs, setLogs] = useState([]);
   const [users, setUsers] = useState({});
   const [isLoading, setIsLoading] = useState(true);
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput.length >= 3 || searchInput.length === 0) {
+        setDebouncedSearch(searchInput);
+        setCurrentPage(1);
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -91,11 +108,30 @@ const AdminLogs = () => {
     }
   };
 
+  const filteredLogs = logs.filter(log => {
+    const searchLower = debouncedSearch.toLowerCase();
+    const actionStr = formatActionName(log.action).toLowerCase();
+    const userName = (log.user?.name || 'System').toLowerCase();
+    const userEmail = (log.user?.email || '').toLowerCase();
+    return actionStr.includes(searchLower) || userName.includes(searchLower) || userEmail.includes(searchLower);
+  });
+
   return (
     <div className="h-full flex flex-col">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">System Activity Logs</h2>
-        <p className="text-gray-500 mt-1">Audit trail of critical system actions</p>
+      <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">System Activity Logs</h2>
+          <p className="text-gray-500 mt-1">Audit trail of critical system actions</p>
+        </div>
+        <div className="relative w-full sm:w-64">
+          <input 
+            type="text" 
+            placeholder="Search logs..." 
+            className="pl-4 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 outline-none w-full"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col overflow-hidden">
@@ -114,12 +150,14 @@ const AdminLogs = () => {
                 <tr>
                   <td colSpan="4" className="text-center p-8 text-gray-500">Loading logs...</td>
                 </tr>
-              ) : logs.length === 0 ? (
+              ) : filteredLogs.length === 0 ? (
                 <tr>
                   <td colSpan="4" className="text-center p-8 text-gray-500">No activity logs recorded yet.</td>
                 </tr>
               ) : (
-                logs.map((log) => (
+                (() => {
+                  const paginatedLogs = filteredLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+                  return paginatedLogs.map((log) => (
                   <tr key={log._id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                     <td className="p-4 align-top">
                       <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -155,10 +193,18 @@ const AdminLogs = () => {
                     </td>
                   </tr>
                 ))
+                })()
               )}
             </tbody>
           </table>
         </div>
+        {!isLoading && filteredLogs.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredLogs.length / itemsPerPage)}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
     </div>
   );

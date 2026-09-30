@@ -65,6 +65,9 @@ const DraggableCard = ({ task, onOpen, getDueDateStatus, dispatch }) => {
     <div
       ref={setNodeRef}
       style={style}
+      {...listeners}
+      {...attributes}
+      onClick={() => onOpen(task)}
       className={`bg-white p-3 rounded shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow relative border-l-4 ${
         isDragging       ? 'opacity-40 shadow-lg' :
         dueDateStatus === 'overdue'   ? 'border-l-red-500' :
@@ -72,16 +75,7 @@ const DraggableCard = ({ task, onOpen, getDueDateStatus, dispatch }) => {
         'border-l-transparent'
       }`}
     >
-      {/* Drag handle area — covers whole card except the status select */}
-      <div
-        {...listeners}
-        {...attributes}
-        className="absolute inset-0 rounded cursor-grab active:cursor-grabbing"
-        onClick={(e) => e.stopPropagation()}
-      />
-
-      {/* Clickable content layer sits above the drag handle */}
-      <div className="relative z-10" onClick={() => onOpen(task)}>
+      <div>
 
         {/* Due date warning badge */}
         {dueDateStatus && (
@@ -174,10 +168,22 @@ const UserDashboard = () => {
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      // Require 8px movement before drag starts — prevents accidental drags on clicks
-      activationConstraint: { distance: 8 },
+      // Require user to hold the card for 500ms before dragging
+      activationConstraint: { delay: 500, tolerance: 5 },
     })
   );
+
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput.length >= 3 || searchInput.length === 0) {
+        setDebouncedSearch(searchInput);
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const openModal = (task) => {
     setSelectedTask(task);
@@ -199,11 +205,11 @@ const UserDashboard = () => {
     });
 
     return () => socket.disconnect();
-  }, [dispatch]);
+  }, [dispatch, user?._id]);
 
   const myTasks = tasks.filter(t =>
     t.assignedTo?.some(a => a._id === user?._id || a === user?._id)
-  );
+  ).filter(t => t.title.toLowerCase().includes(debouncedSearch.toLowerCase()) || (t.description || '').toLowerCase().includes(debouncedSearch.toLowerCase()));
 
   const columns = Object.fromEntries(
     COLUMNS.map(status => [status, myTasks.filter(t => t.status === status)])
@@ -249,9 +255,20 @@ const UserDashboard = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-800">My Tasks</h2>
-        <p className="text-xs text-gray-400">Drag cards between columns to update status</p>
+      <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-gray-800">My Tasks</h2>
+          <p className="text-xs text-gray-400">Drag cards between columns to update status</p>
+        </div>
+        <div className="relative w-full sm:w-64">
+          <input 
+            type="text" 
+            placeholder="Search tasks..." 
+            className="px-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 outline-none w-full"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+        </div>
       </div>
 
       {!isLoading && pendingCount > 0 && (

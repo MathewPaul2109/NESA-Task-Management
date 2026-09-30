@@ -24,6 +24,10 @@ class UserRepository {
     return await User.find(query).select('-password');
   }
 
+  async countUsers(query = {}) {
+    return await User.countDocuments(query);
+  }
+
   async createUser(userData) {
     return await User.create(userData);
   }

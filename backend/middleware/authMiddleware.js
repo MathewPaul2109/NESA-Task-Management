@@ -15,6 +15,14 @@ const protect = async (req, res, next) => {
       // Get user from the token
       req.user = await User.findById(decoded.id).select('-password');
 
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not found, token invalid' });
+      }
+
+      if (req.user.isArchived) {
+        return res.status(401).json({ message: 'User account is deactivated' });
+      }
+
       next();
     } catch (error) {
       console.error(error);

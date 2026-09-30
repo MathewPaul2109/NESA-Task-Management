@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
 
-// Get user from localStorage
-const user = JSON.parse(localStorage.getItem('user'));
+// Get user from sessionStorage
+const user = JSON.parse(sessionStorage.getItem('user'));
 
 const initialState = {
   user: user ? user : null,
@@ -16,7 +16,7 @@ export const register = createAsyncThunk('auth/register', async (userData, thunk
   try {
     const response = await api.post('/auth/register', userData);
     if (response.data) {
-      localStorage.setItem('user', JSON.stringify(response.data));
+      sessionStorage.setItem('user', JSON.stringify(response.data));
     }
     return response.data;
   } catch (error) {
@@ -29,7 +29,7 @@ export const login = createAsyncThunk('auth/login', async (userData, thunkAPI) =
   try {
     const response = await api.post('/auth/login', userData);
     if (response.data) {
-      localStorage.setItem('user', JSON.stringify(response.data));
+      sessionStorage.setItem('user', JSON.stringify(response.data));
     }
     return response.data;
   } catch (error) {
@@ -39,7 +39,12 @@ export const login = createAsyncThunk('auth/login', async (userData, thunkAPI) =
 });
 
 export const logout = createAsyncThunk('auth/logout', async () => {
-  localStorage.removeItem('user');
+  try {
+    await api.post('/auth/logout');
+  } catch (err) {
+    console.error(err);
+  }
+  sessionStorage.removeItem('user');
 });
 
 export const authSlice = createSlice({
