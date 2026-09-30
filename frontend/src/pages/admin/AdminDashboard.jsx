@@ -187,8 +187,8 @@ const AdminDashboard = () => {
             </select>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-auto flex-1 min-h-[300px]">
+          <table className="w-full text-left border-collapse min-w-max">
             <thead>
               <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
                 <th className="p-4 font-medium">Project Name</th>
@@ -321,8 +321,8 @@ const AdminDashboard = () => {
                 )}
               </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <div className="overflow-auto flex-1 min-h-[300px]">
+            <table className="w-full text-left border-collapse min-w-max">
               <thead>
                 <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
                   <th className="p-4 font-medium">Task Title</th>

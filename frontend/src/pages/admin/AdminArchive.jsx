@@ -263,8 +263,8 @@ const AdminArchive = () => {
                 </button>
               )}
             </div>
-            <div className="overflow-x-auto flex-1">
-              <table className="w-full text-left border-collapse">
+            <div className="overflow-auto flex-1">
+              <table className="w-full text-left border-collapse min-w-max">
                 <thead>
                   <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
                     <th className="p-4 font-medium">Project Name</th>
@@ -332,8 +332,8 @@ const AdminArchive = () => {
                 </button>
               )}
             </div>
-            <div className="overflow-x-auto flex-1">
-              <table className="w-full text-left border-collapse">
+            <div className="overflow-auto flex-1">
+              <table className="w-full text-left border-collapse min-w-max">
                 <thead>
                   <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
                     <th className="p-4 font-medium">Task Title</th>
@@ -402,8 +402,8 @@ const AdminArchive = () => {
                 </button>
               )}
             </div>
-            <div className="overflow-x-auto flex-1">
-              <table className="w-full text-left border-collapse">
+            <div className="overflow-auto flex-1">
+              <table className="w-full text-left border-collapse min-w-max">
                 <thead>
                   <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
                     <th className="p-4 font-medium">Name</th>

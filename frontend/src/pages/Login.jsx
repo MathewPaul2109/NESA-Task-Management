@@ -2,14 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { login, reset } from '../features/auth/authSlice';
-import { Lock, User } from 'lucide-react';
+import { Lock, User, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: '',
+    email: localStorage.getItem('rememberedEmail') || '',
     password: '',
   });
+
+  const [rememberMe, setRememberMe] = useState(!!localStorage.getItem('rememberedEmail'));
+  const [showPassword, setShowPassword] = useState(false);
 
   const { email, password } = formData;
   const navigate = useNavigate();
@@ -44,6 +47,11 @@ const Login = () => {
 
   const onSubmit = (e) => {
     e.preventDefault();
+    if (rememberMe) {
+      localStorage.setItem('rememberedEmail', email);
+    } else {
+      localStorage.removeItem('rememberedEmail');
+    }
     const userData = { email, password };
     dispatch(login(userData));
   };
@@ -93,13 +101,20 @@ const Login = () => {
                </div>
                <input
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 className="w-full px-4 py-3 bg-transparent text-white placeholder-white/70 focus:outline-none focus:ring-0 focus:bg-white/30 transition-colors tracking-widest font-mono"
                 placeholder="••••••••••••"
                 value={password}
                 onChange={onChange}
               />
+              <button 
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="px-4 text-white/70 hover:text-white flex items-center justify-center"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
             </div>
 
           </div>
@@ -110,6 +125,8 @@ const Login = () => {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
                 className="h-4 w-4 rounded bg-white/20 border-white/30 text-[#0a0a3a] focus:ring-[#0a0a3a]"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-white/80">
