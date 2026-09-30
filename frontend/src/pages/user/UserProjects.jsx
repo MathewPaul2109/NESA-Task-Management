@@ -5,6 +5,7 @@ import { getTasks } from '../../features/tasks/taskSlice';
 import { FolderGit2, Users, MessageSquare } from 'lucide-react';
 import ProjectChatDrawer from '../../components/ProjectChatDrawer';
 import ProjectTasksModal from './ProjectTasksModal';
+import Pagination from '../../components/Pagination';
 
 const UserProjects = () => {
   const dispatch = useDispatch();
@@ -13,15 +14,42 @@ const UserProjects = () => {
   const [activeChatProject, setActiveChatProject] = React.useState(null);
   const [activeTasksProject, setActiveTasksProject] = React.useState(null);
 
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 6;
+
+  const [searchInput, setSearchInput] = React.useState('');
+  const [debouncedSearch, setDebouncedSearch] = React.useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput.length >= 3 || searchInput.length === 0) {
+        setDebouncedSearch(searchInput);
+        setCurrentPage(1);
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
   useEffect(() => {
     dispatch(getProjects());
     dispatch(getTasks());
   }, [dispatch]);
 
+  const filteredProjects = projects.filter(p => p.title.toLowerCase().includes(debouncedSearch.toLowerCase()));
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h2 className="text-2xl font-bold text-gray-800">My Projects</h2>
+        <div className="relative w-full sm:w-64">
+          <input 
+            type="text" 
+            placeholder="Search projects..." 
+            className="pl-4 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 outline-none w-full"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+        </div>
       </div>
 
       {isProjectsLoading ? (
@@ -29,9 +57,11 @@ const UserProjects = () => {
       ) : projects.length === 0 ? (
         <div className="text-center text-gray-500 mt-10">You are not assigned to any projects yet.</div>
       ) : (
-        <div className="flex-1 overflow-y-auto pr-2 pb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map(project => {
+        <div className="flex-1 overflow-y-auto pr-2 pb-6 flex flex-col">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          {(() => {
+            const paginatedProjects = filteredProjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+            return paginatedProjects.map(project => {
             const projectTasks = tasks.filter(t => (t.project?._id || t.project) === project._id);
             const totalTasks = projectTasks.length;
             const completedTasks = projectTasks.filter(t => t.status === 'Done').length;
@@ -94,7 +124,15 @@ const UserProjects = () => {
               </div>
             </div>
             );
-          })}
+          })
+          })()}
+          </div>
+          <div className="mt-auto">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.ceil(filteredProjects.length / itemsPerPage)}
+              onPageChange={setCurrentPage}
+            />
           </div>
         </div>
       )}

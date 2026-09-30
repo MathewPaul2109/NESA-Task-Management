@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Settings, Activity, Archive, ListTodo, FolderGit2 } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, Activity, Archive, FolderGit2 } from 'lucide-react';
 import { useSelector } from 'react-redux';
 
 const AdminSidebar = () => {

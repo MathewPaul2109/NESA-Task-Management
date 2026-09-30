@@ -2,10 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getTasks } from '../../features/tasks/taskSlice';
 import api from '../../services/api';
-import { User, Mail, ShieldAlert, CheckCircle2, Clock, Loader2, Pencil, Trash2 } from 'lucide-react';
+import { Mail, CheckCircle2, Clock, Loader2, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import EditUserModal from './EditUserModal';
 import AddUserModal from './AddUserModal';
+import Pagination from '../../components/Pagination';
 import TaskModal from '../user/TaskModal';
 
 const AdminUsers = () => {
@@ -15,6 +16,9 @@ const AdminUsers = () => {
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [updatingUserId, setUpdatingUserId] = useState(null);
   
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
   // Modals state
   const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
@@ -22,6 +26,19 @@ const AdminUsers = () => {
   
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput.length >= 3 || searchInput.length === 0) {
+        setDebouncedSearch(searchInput);
+        setCurrentPage(1);
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   useEffect(() => {
     dispatch(getTasks());
@@ -38,6 +55,11 @@ const AdminUsers = () => {
     };
     fetchUsers();
   }, [dispatch]);
+
+  const filteredUsers = users.filter(u => 
+    u.name.toLowerCase().includes(debouncedSearch.toLowerCase()) || 
+    u.email.toLowerCase().includes(debouncedSearch.toLowerCase())
+  );
 
   // Helper to get tasks for a specific user
   const getUserTasks = (userId) => {
@@ -96,12 +118,21 @@ const AdminUsers = () => {
           <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
           <p className="text-gray-500 mt-1">Overview of all registered users and their assigned tasks</p>
         </div>
-        <button 
-          onClick={() => setIsAddUserModalOpen(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition flex items-center gap-2"
-        >
-          Add User
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input 
+            type="text" 
+            placeholder="Search users..." 
+            className="px-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 outline-none w-full sm:w-64"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+          <button 
+            onClick={() => setIsAddUserModalOpen(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition flex items-center gap-2"
+          >
+            Add User
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col overflow-hidden">
@@ -125,7 +156,9 @@ const AdminUsers = () => {
                   <td colSpan="4" className="text-center p-8 text-gray-500">No users found.</td>
                 </tr>
               ) : (
-                users.map(user => {
+                (() => {
+                  const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+                  return paginatedUsers.map(user => {
                   const userTasks = getUserTasks(user._id);
                   const completedTasks = userTasks.filter(t => t.status === 'Done').length;
                   const activeTasks = userTasks.length - completedTasks;
@@ -216,10 +249,18 @@ const AdminUsers = () => {
                     </tr>
                   );
                 })
+                })()
               )}
             </tbody>
           </table>
         </div>
+        {!isLoadingUsers && filteredUsers.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredUsers.length / itemsPerPage)}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
       
       <EditUserModal 

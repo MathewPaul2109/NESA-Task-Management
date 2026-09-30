@@ -76,7 +76,7 @@ export const taskSlice = createSlice({
   name: 'task',
   initialState,
   reducers: {
-    reset: (state) => initialState,
+    reset: () => initialState,
     removeTask: (state, action) => {
       state.tasks = state.tasks.filter(t => t._id !== action.payload);
     },

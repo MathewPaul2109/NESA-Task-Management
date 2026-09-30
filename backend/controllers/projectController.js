@@ -75,6 +75,21 @@ const deleteProject = async (req, res) => {
   }
 };
 
+// @desc    Permanently delete a project
+// @route   DELETE /api/projects/:id/hard
+// @access  Private (Admin only)
+const hardDeleteProject = async (req, res) => {
+  try {
+    await ProjectService.hardDeleteProject(req.user, req.params.id);
+    res.json({ message: 'Project permanently removed' });
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
 // @desc    Restore a project
 // @route   PUT /api/projects/:id/restore
 // @access  Private (Admin only)
@@ -96,5 +111,6 @@ module.exports = {
   createProject,
   updateProject,
   deleteProject,
+  hardDeleteProject,
   restoreProject
 };

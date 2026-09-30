@@ -123,6 +123,17 @@ class ProjectService {
     await ProjectRepository.updateProject(project);
   }
 
+  async hardDeleteProject(user, projectId) {
+    const project = await ProjectRepository.findProjectById(projectId);
+    if (!project) {
+      const err = new Error('Project not found');
+      err.statusCode = 404;
+      throw err;
+    }
+    await logAction('PROJECT_HARD_DELETED', user._id, { title: project.title }, project._id);
+    await ProjectRepository.deleteProject(project);
+  }
+
   async restoreProject(user, projectId) {
     const project = await ProjectRepository.findProjectById(projectId);
     if (!project) {

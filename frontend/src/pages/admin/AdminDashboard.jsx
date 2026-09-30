@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getProjects, deleteProject } from '../../features/projects/projectSlice';
 import { getTasks, archiveTask } from '../../features/tasks/taskSlice';
-import { FolderGit2, Users, CheckCircle2, Plus, MessageSquare, Edit, ListTodo, Search, Archive, Trash2 } from 'lucide-react';
+import { FolderGit2, Users, CheckCircle2, Plus, MessageSquare, Edit, ListTodo, Search, Archive } from 'lucide-react';
 import ProjectModal from './ProjectModal';
 import AdminTaskModal from './AdminTaskModal';
 import ProjectChatDrawer from '../../components/ProjectChatDrawer';
 import TaskModal from '../user/TaskModal';
+import Pagination from '../../components/Pagination';
 import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
@@ -24,13 +25,36 @@ const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
+  const [currentProjectPage, setCurrentProjectPage] = useState(1);
+  const projectItemsPerPage = 5;
+
+  const [currentTaskPage, setCurrentTaskPage] = useState(1);
+  const taskItemsPerPage = 5;
+
+  const [taskSearchQuery, setTaskSearchQuery] = useState('');
+  const [debouncedTaskSearch, setDebouncedTaskSearch] = useState('');
+
   useEffect(() => {
-    // Add debouncing for search
+    // Add debouncing for project search
     const timer = setTimeout(() => {
-      dispatch(getProjects({ search: searchQuery, status: statusFilter }));
-    }, 500);
+      if (searchQuery.length >= 3 || searchQuery.length === 0) {
+        dispatch(getProjects({ search: searchQuery, status: statusFilter }));
+        setCurrentProjectPage(1);
+      }
+    }, 3000);
     return () => clearTimeout(timer);
   }, [dispatch, searchQuery, statusFilter]);
+
+  useEffect(() => {
+    // Add debouncing for task search
+    const timer = setTimeout(() => {
+      if (taskSearchQuery.length >= 3 || taskSearchQuery.length === 0) {
+        setDebouncedTaskSearch(taskSearchQuery);
+        setCurrentTaskPage(1);
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [taskSearchQuery]);
 
   useEffect(() => {
     dispatch(getTasks());
@@ -41,6 +65,7 @@ const AdminDashboard = () => {
 
   const completedTasks = tasks
     .filter(t => t.status === 'Done')
+    .filter(t => t.title.toLowerCase().includes(debouncedTaskSearch.toLowerCase()))
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
   const handleArchive = async (e, taskId, taskTitle) => {
@@ -63,6 +88,23 @@ const AdminDashboard = () => {
     } else {
       toast.error(result.payload || 'Failed to archive project.');
     }
+  };
+
+  const handleArchiveAllTasks = async () => {
+    if (!completedTasks.length) return;
+    if (!window.confirm(`Are you sure you want to archive ALL ${completedTasks.length} completed tasks?`)) return;
+    
+    let successCount = 0;
+    toast.loading('Archiving tasks...', { id: 'archiveAll' });
+    
+    await Promise.all(
+      completedTasks.map(async (task) => {
+        const result = await dispatch(archiveTask(task._id));
+        if (archiveTask.fulfilled.match(result)) successCount++;
+      })
+    );
+    
+    toast.success(`Successfully archived ${successCount} tasks.`, { id: 'archiveAll' });
   };
 
   return (
@@ -167,7 +209,9 @@ const AdminDashboard = () => {
                   <td colSpan="4" className="text-center p-4 text-gray-500">No projects found.</td>
                 </tr>
               ) : (
-                projects.map(project => {
+                (() => {
+                  const paginatedProjects = projects.slice((currentProjectPage - 1) * projectItemsPerPage, currentProjectPage * projectItemsPerPage);
+                  return paginatedProjects.map(project => {
                   const projectTasks = tasks.filter(t => (t.project?._id || t.project) === project._id);
                   const totalTasks = projectTasks.length;
                   const completedTasks = projectTasks.filter(t => t.status === 'Done').length;
@@ -230,22 +274,52 @@ const AdminDashboard = () => {
                       </div>
                     </td>
                   </tr>
-                )})
+                );
+                })
+                })()
               )}
             </tbody>
           </table>
         </div>
+        {!isProjectsLoading && projects.length > 0 && (
+          <Pagination
+            currentPage={currentProjectPage}
+            totalPages={Math.ceil(projects.length / projectItemsPerPage)}
+            onPageChange={setCurrentProjectPage}
+          />
+        )}
       </div>
       
         {/* Completed Tasks Section */}
         {(isTasksLoading || completedTasks.length > 0) && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden h-full">
-            <div className="p-4 border-b border-gray-100 font-semibold text-gray-700 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ListTodo className="h-5 w-5 text-green-500" />
-              Completed Tasks
-            </div>
-            <span className="text-sm font-normal text-gray-500">{completedTasks.length} task{completedTasks.length !== 1 ? 's' : ''}</span>
+            <div className="p-4 border-b border-gray-100 font-semibold text-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex items-center gap-2">
+                <ListTodo className="h-5 w-5 text-green-500" />
+                Completed Tasks
+                <span className="text-sm font-normal text-gray-500 ml-2">({completedTasks.length})</span>
+              </div>
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Search completed tasks..." 
+                    className="pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 outline-none w-full"
+                    value={taskSearchQuery}
+                    onChange={(e) => setTaskSearchQuery(e.target.value)}
+                  />
+                </div>
+                {completedTasks.length > 0 && (
+                  <button
+                    onClick={handleArchiveAllTasks}
+                    className="inline-flex items-center justify-center gap-2 bg-amber-50 text-amber-700 border border-amber-200 px-3 py-2 rounded-md hover:bg-amber-100 transition text-sm font-medium whitespace-nowrap w-full sm:w-auto"
+                  >
+                    <Archive className="h-4 w-4" />
+                    Archive All
+                  </button>
+                )}
+              </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -263,7 +337,9 @@ const AdminDashboard = () => {
                     <td colSpan="4" className="text-center p-4 text-gray-500">Loading tasks...</td>
                   </tr>
                 ) : (
-                  completedTasks.map(task => (
+                  (() => {
+                    const paginatedTasks = completedTasks.slice((currentTaskPage - 1) * taskItemsPerPage, currentTaskPage * taskItemsPerPage);
+                    return paginatedTasks.map(task => (
                     <tr
                       key={task._id}
                       className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors"
@@ -285,10 +361,18 @@ const AdminDashboard = () => {
                       </td>
                     </tr>
                   ))
+                  })()
                 )}
               </tbody>
             </table>
           </div>
+          {!isTasksLoading && completedTasks.length > 0 && (
+            <Pagination
+              currentPage={currentTaskPage}
+              totalPages={Math.ceil(completedTasks.length / taskItemsPerPage)}
+              onPageChange={setCurrentTaskPage}
+            />
+          )}
         </div>
       )}
       </div>

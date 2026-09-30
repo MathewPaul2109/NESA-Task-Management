@@ -15,11 +15,15 @@ const TaskModal = ({ isOpen, onClose, task }) => {
   const [newComment, setNewComment] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [notes, setNotes] = useState('');
+  const [priority, setPriority] = useState('Medium');
+  const [dueDate, setDueDate] = useState('');
 
   useEffect(() => {
     if (task && isOpen) {
       setStatus(task.status);
       setNotes(task.userNotes || '');
+      setPriority(task.priority || 'Medium');
+      setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '');
       dispatch(getComments(task._id));
     } else {
       dispatch(resetComments());
@@ -38,6 +42,11 @@ const TaskModal = ({ isOpen, onClose, task }) => {
   const handleStatusUpdate = () => {
     dispatch(updateTask({ id: task._id, taskData: { status } }));
     toast.success('Task status updated!');
+  };
+
+  const handleDetailsUpdate = () => {
+    dispatch(updateTask({ id: task._id, taskData: { priority, dueDate } }));
+    toast.success('Task details updated!');
   };
 
   const handlePostComment = (e) => {
@@ -99,15 +108,46 @@ const TaskModal = ({ isOpen, onClose, task }) => {
             
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Details</h3>
-              <div className="bg-white p-3 rounded-lg border border-gray-200 text-sm space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Priority:</span>
-                  <span className="font-medium text-gray-800">{task.priority}</span>
+              <div className="bg-white p-3 rounded-lg border border-gray-200 text-sm space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span className="text-gray-500 w-24">Priority:</span>
+                  {user?.role === 'Admin' || user?.role === 'Project Manager' ? (
+                    <select 
+                      className="border border-gray-300 rounded-md p-1.5 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none flex-1"
+                      value={priority}
+                      onChange={(e) => setPriority(e.target.value)}
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                    </select>
+                  ) : (
+                    <span className="font-medium text-gray-800 flex-1 text-right sm:text-left">{task.priority}</span>
+                  )}
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Due Date:</span>
-                  <span className="font-medium text-gray-800">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span className="text-gray-500 w-24">Due Date:</span>
+                  {user?.role === 'Admin' || user?.role === 'Project Manager' ? (
+                    <input 
+                      type="date"
+                      className="border border-gray-300 rounded-md p-1.5 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none flex-1"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                    />
+                  ) : (
+                    <span className="font-medium text-gray-800 flex-1 text-right sm:text-left">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}</span>
+                  )}
                 </div>
+                {(user?.role === 'Admin' || user?.role === 'Project Manager') && (
+                  <div className="flex justify-end pt-2">
+                    <button 
+                      onClick={handleDetailsUpdate}
+                      className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition"
+                    >
+                      Save Details
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 

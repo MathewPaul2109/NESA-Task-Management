@@ -32,6 +32,35 @@ const loginUser = async (req, res) => {
   }
 };
 
+// @desc    Refresh Token
+// @route   POST /api/auth/refresh
+// @access  Public
+const refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    const result = await AuthService.refreshToken(refreshToken);
+    res.json(result);
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
+// @desc    Logout User
+// @route   POST /api/auth/logout
+// @access  Public
+const logoutUser = async (req, res) => {
+  try {
+    // We don't store refresh tokens in DB right now, so we just return success
+    // The frontend will clear the sessionStorage
+    res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
 // @desc    Get user data
 // @route   GET /api/auth/me
 // @access  Private
@@ -107,6 +136,21 @@ const deleteUser = async (req, res) => {
   }
 };
 
+// @desc    Permanently delete user
+// @route   DELETE /api/auth/users/:id/hard
+// @access  Private/Admin
+const hardDeleteUser = async (req, res) => {
+  try {
+    const result = await AuthService.hardDeleteUser(req.user.id, req.params.id);
+    res.json(result);
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
 // @desc    Restore user
 // @route   PUT /api/auth/users/:id/restore
 // @access  Private/Admin
@@ -160,7 +204,10 @@ module.exports = {
   updateUserRole,
   updateUserDetails,
   deleteUser,
+  hardDeleteUser,
   restoreUser,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  refreshToken,
+  logoutUser
 };
