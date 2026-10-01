@@ -1,6 +1,7 @@
 const ProjectRepository = require('../repositories/ProjectRepository');
 const TaskRepository = require('../repositories/TaskRepository');
 const logAction = require('../utils/logger');
+const sendEmail = require('../utils/sendEmail');
 
 class ProjectService {
   async getProjectsForUser(user, queryParams = {}) {
@@ -80,7 +81,7 @@ class ProjectService {
 
   async createProject(user, projectData) {
     const { title, description, members, status, manager } = projectData;
-    const project = await ProjectRepository.createProject({
+    let project = await ProjectRepository.createProject({
       title,
       description,
       manager: manager || user._id,
@@ -88,7 +89,38 @@ class ProjectService {
       status
     });
     await logAction('PROJECT_CREATED', user._id, { title }, project._id);
-    return project;
+    
+    const populatedProject = await ProjectRepository.findProjectById(project._id);
+
+    if (populatedProject.manager && populatedProject.manager.email) {
+      try {
+        await sendEmail({
+          email: populatedProject.manager.email,
+          subject: 'You have been assigned as Project Manager',
+          message: `You have been assigned as the Project Manager for the new project: ${title}\n\nDescription: ${description}`
+        });
+      } catch (err) {
+        console.error('Error sending email to manager:', err);
+      }
+    }
+
+    if (populatedProject.members && populatedProject.members.length > 0) {
+      for (const member of populatedProject.members) {
+        if (member.email) {
+          try {
+            await sendEmail({
+              email: member.email,
+              subject: 'You have been added to a new Project',
+              message: `You have been added to the project: ${title}\n\nProject Manager: ${populatedProject.manager.name}\n\nDescription: ${description}`
+            });
+          } catch (err) {
+            console.error('Error sending email to member:', err);
+          }
+        }
+      }
+    }
+
+    return populatedProject;
   }
 
   async updateProject(user, projectId, updateData) {
@@ -108,7 +140,7 @@ class ProjectService {
     const updatedProject = await ProjectRepository.updateProject(project);
     await logAction('PROJECT_UPDATED', user._id, { title: updatedProject.title, status: updatedProject.status }, updatedProject._id);
     
-    return updatedProject;
+    return await ProjectRepository.findProjectById(updatedProject._id);
   }
 
   async deleteProject(user, projectId) {

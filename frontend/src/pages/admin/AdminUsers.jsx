@@ -136,7 +136,7 @@ const AdminUsers = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-auto flex-1">
           <table className="w-full text-left border-collapse min-w-max">
             <thead>
               <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">

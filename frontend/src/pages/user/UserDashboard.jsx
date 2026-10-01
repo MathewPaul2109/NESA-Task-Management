@@ -93,7 +93,7 @@ const DraggableCard = ({ task, onOpen, getDueDateStatus, dispatch }) => {
         )}
 
         <h4 className="font-medium text-gray-900 text-sm mb-0.5 break-words">{task.title}</h4>
-        <p className="text-xs text-gray-500 line-clamp-2 mb-2 break-words">{task.description}</p>
+        <p className="text-xs text-gray-500 line-clamp-2 mb-2 break-words">{task.description?.replace(/<[^>]*>?/gm, '')}</p>
 
         {/* Progress Bar */}
         <div className="mb-2">
@@ -144,7 +144,7 @@ const DraggableCard = ({ task, onOpen, getDueDateStatus, dispatch }) => {
 const OverlayCard = ({ task }) => (
   <div className="bg-white p-4 rounded shadow-xl border border-blue-300 border-l-4 border-l-blue-400 w-72 rotate-2 opacity-95 cursor-grabbing">
     <h4 className="font-medium text-gray-900 mb-1">{task.title}</h4>
-    <p className="text-sm text-gray-500 line-clamp-2">{task.description}</p>
+    <p className="text-sm text-gray-500 line-clamp-2">{task.description?.replace(/<[^>]*>?/gm, '')}</p>
     <span className={`mt-2 inline-block px-2 py-1 rounded-full text-xs ${
       task.priority === 'High'   ? 'bg-red-100 text-red-700' :
       task.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :

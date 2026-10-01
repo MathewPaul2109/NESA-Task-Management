@@ -39,6 +39,11 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      // Skip interceptor for login so it can show the error toast
+      if (originalRequest.url === '/auth/login') {
+        return Promise.reject(error);
+      }
+
       // Prevent infinite loops if the refresh itself fails
       if (originalRequest.url === '/auth/refresh') {
         sessionStorage.removeItem('user');

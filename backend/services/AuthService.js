@@ -13,7 +13,7 @@ const generateAccessToken = (id) => {
 
 const generateRefreshToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET || 'refreshsecret123', {
-    expiresIn: '1d',
+    expiresIn: '7d',
   });
 };
 
@@ -33,8 +33,8 @@ class AuthService {
       throw err;
     }
 
-    if (!/[A-Z]/.test(password) || !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      const err = new Error('Password must contain at least one capital letter and one special character');
+    if (!/[A-Z]/.test(password) || !/[!@#$%^&*(),.?":{}|<>]/.test(password) || !/\d/.test(password)) {
+      const err = new Error('Password must contain at least one capital letter, one special character, and one number');
       err.statusCode = 400;
       throw err;
     }
@@ -295,8 +295,8 @@ class AuthService {
       throw err;
     }
 
-    if (!/[A-Z]/.test(newPassword) || !/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
-      const err = new Error('Password must contain at least one capital letter and one special character');
+    if (!/[A-Z]/.test(newPassword) || !/[!@#$%^&*(),.?":{}|<>]/.test(newPassword) || !/\d/.test(newPassword)) {
+      const err = new Error('Password must contain at least one capital letter, one special character, and one number');
       err.statusCode = 400;
       throw err;
     }

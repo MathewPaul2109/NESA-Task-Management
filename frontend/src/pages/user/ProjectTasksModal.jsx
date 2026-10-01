@@ -46,7 +46,7 @@ const ProjectTasksModal = ({ isOpen, onClose, project }) => {
                       {task.status}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 mb-4">{task.description}</p>
+                  <p className="text-sm text-gray-600 mb-4">{task.description?.replace(/<[^>]*>?/gm, '')}</p>
                   
                   <div className="flex justify-between items-center text-xs text-gray-500 border-t border-gray-50 pt-3">
                     <div className="flex items-center gap-2">
