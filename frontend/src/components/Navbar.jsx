@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout, reset } from '../features/auth/authSlice';
 import { LogOut, User, Menu } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const Navbar = ({ onMenuToggle }) => {
   const dispatch = useDispatch();
@@ -10,9 +11,30 @@ const Navbar = ({ onMenuToggle }) => {
   const { user } = useSelector((state) => state.auth);
 
   const onLogout = () => {
-    dispatch(logout());
-    dispatch(reset());
-    navigate('/login');
+    toast((t) => (
+      <div>
+        <p className="mb-3 font-medium text-gray-800">Are you sure you want to log out?</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              dispatch(logout());
+              dispatch(reset());
+              navigate('/login');
+            }}
+            className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors"
+          >
+            Log out
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000, position: 'top-center' });
   };
 
   return (

@@ -212,8 +212,8 @@ const AdminDashboard = () => {
               </select>
             </div>
           </div>
-          <div className="overflow-auto max-h-[400px] md:max-h-none md:flex-1 min-h-[300px]">
-            <table className="w-full text-left border-collapse text-sm overflow-x-auto">
+          <div className="overflow-scroll max-h-[400px] md:max-h-none md:flex-1 min-h-[300px]">
+            <table className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
                   <th className="p-4 font-medium">Project Name</th>
