@@ -149,24 +149,7 @@ const RichTextEditor = ({ value, onChange, placeholder }) => {
         className="min-h-[110px]"
       />
 
-      {/* Placeholder styling */}
-      <style>{`
-        .tiptap p.is-editor-empty:first-child::before {
-          content: attr(data-placeholder);
-          float: left;
-          color: #9ca3af;
-          pointer-events: none;
-          height: 0;
-        }
-        .tiptap:focus { outline: none; }
-        .tiptap ul { list-style-type: disc; padding-left: 1.25rem; }
-        .tiptap ol { list-style-type: decimal; padding-left: 1.25rem; }
-        .tiptap h1 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .tiptap h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.4rem; }
-        .tiptap h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.3rem; }
-        .tiptap a { color: #2563eb; text-decoration: underline; }
-        .tiptap p { margin-bottom: 0.25rem; }
-      `}</style>
+
     </div>
   );
 };

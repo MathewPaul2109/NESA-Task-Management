@@ -2,8 +2,14 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
 
 const initialState = {
-  tasks: [],
-  archivedTasks: [],
+  items: [],
+  total: 0,
+  totalPages: 0,
+  currentPage: 1,
+  archivedItems: [],
+  archivedTotal: 0,
+  archivedTotalPages: 0,
+  archivedCurrentPage: 1,
   isError: false,
   isSuccess: false,
   isLoading: false,
@@ -11,10 +17,9 @@ const initialState = {
   message: '',
 };
 
-export const getTasks = createAsyncThunk('tasks/getAll', async (projectId, thunkAPI) => {
+export const getTasks = createAsyncThunk('tasks/getAll', async (params = {}, thunkAPI) => {
   try {
-    const url = projectId ? `/tasks?projectId=${projectId}` : '/tasks';
-    const response = await api.get(url);
+    const response = await api.get('/tasks', { params });
     return response.data;
   } catch (error) {
     const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
@@ -52,9 +57,9 @@ export const archiveTask = createAsyncThunk('tasks/archive', async (taskId, thun
   }
 });
 
-export const getArchivedTasks = createAsyncThunk('tasks/getArchived', async (_, thunkAPI) => {
+export const getArchivedTasks = createAsyncThunk('tasks/getArchived', async (params = {}, thunkAPI) => {
   try {
-    const response = await api.get('/tasks/archived');
+    const response = await api.get('/tasks/archived', { params });
     return response.data;
   } catch (error) {
     const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
@@ -78,7 +83,7 @@ export const taskSlice = createSlice({
   reducers: {
     reset: () => initialState,
     removeTask: (state, action) => {
-      state.tasks = state.tasks.filter(t => t._id !== action.payload);
+      state.items = state.items.filter(t => t._id !== action.payload);
     },
   },
   extraReducers: (builder) => {
@@ -89,7 +94,10 @@ export const taskSlice = createSlice({
       .addCase(getTasks.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.tasks = action.payload;
+        state.items = action.payload.tasks || [];
+        state.total = action.payload.total || 0;
+        state.totalPages = action.payload.totalPages || 0;
+        state.currentPage = action.payload.currentPage || 1;
       })
       .addCase(getTasks.rejected, (state, action) => {
         state.isLoading = false;
@@ -98,9 +106,9 @@ export const taskSlice = createSlice({
       })
       .addCase(updateTask.fulfilled, (state, action) => {
         // Find index and update the specific task in the state
-        const index = state.tasks.findIndex(t => t._id === action.payload._id);
+        const index = state.items.findIndex(t => t._id === action.payload._id);
         if (index !== -1) {
-          state.tasks[index] = action.payload;
+          state.items[index] = action.payload;
         }
       })
       .addCase(createTask.pending, (state) => {
@@ -109,7 +117,7 @@ export const taskSlice = createSlice({
       .addCase(createTask.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.tasks.push(action.payload);
+        state.items.push(action.payload);
       })
       .addCase(createTask.rejected, (state, action) => {
         state.isLoading = false;
@@ -118,7 +126,7 @@ export const taskSlice = createSlice({
       })
       .addCase(archiveTask.fulfilled, (state, action) => {
         // Remove the archived task from the active list immediately
-        state.tasks = state.tasks.filter(t => t._id !== action.payload);
+        state.items = state.items.filter(t => t._id !== action.payload);
       })
       .addCase(archiveTask.rejected, (state, action) => {
         state.isError = true;
@@ -129,7 +137,10 @@ export const taskSlice = createSlice({
       })
       .addCase(getArchivedTasks.fulfilled, (state, action) => {
         state.isArchivedLoading = false;
-        state.archivedTasks = action.payload;
+        state.archivedItems = action.payload.tasks || [];
+        state.archivedTotal = action.payload.total || 0;
+        state.archivedTotalPages = action.payload.totalPages || 0;
+        state.archivedCurrentPage = action.payload.currentPage || 1;
       })
       .addCase(getArchivedTasks.rejected, (state, action) => {
         state.isArchivedLoading = false;
@@ -138,9 +149,9 @@ export const taskSlice = createSlice({
       })
       .addCase(restoreTask.fulfilled, (state, action) => {
         // Remove from archived list
-        state.archivedTasks = state.archivedTasks.filter(t => t._id !== action.payload._id);
+        state.archivedItems = state.archivedItems.filter(t => t._id !== action.payload._id);
         // Add back to active tasks list
-        state.tasks.push(action.payload);
+        state.items.push(action.payload);
       })
       .addCase(restoreTask.rejected, (state, action) => {
         state.isError = true;

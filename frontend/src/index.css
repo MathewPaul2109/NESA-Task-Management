@@ -1,1 +1,76 @@
 @import "tailwindcss";
+
+/* ── Ensure proper scaling on all devices ── */
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Always-visible scrollbar for all overflow containers ── */
+.overflow-auto,
+.overflow-x-auto,
+.overflow-y-auto {
+  scrollbar-width: thin;                  /* Firefox */
+  scrollbar-color: #cbd5e1 transparent;   /* Firefox: thumb / track */
+}
+
+/* WebKit (Chrome, Safari, mobile browsers) */
+.overflow-auto::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.overflow-auto::-webkit-scrollbar-track,
+.overflow-x-auto::-webkit-scrollbar-track,
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb,
+.overflow-x-auto::-webkit-scrollbar-thumb,
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb:hover,
+.overflow-x-auto::-webkit-scrollbar-thumb:hover,
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* ── Tiptap rich text editor styles ── */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
+.tiptap:focus { outline: none; }
+.tiptap ul { list-style-type: disc; padding-left: 1.25rem; }
+.tiptap ol { list-style-type: decimal; padding-left: 1.25rem; }
+.tiptap h1 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+.tiptap h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.4rem; }
+.tiptap h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.3rem; }
+.tiptap a { color: #2563eb; text-decoration: underline; }
+.tiptap p { margin-bottom: 0.25rem; }

@@ -14,17 +14,21 @@ const priorityStyles = {
 
 const AdminArchive = () => {
   const dispatch = useDispatch();
-  const { archivedTasks, isArchivedLoading } = useSelector((state) => state.tasks);
+  const { archivedItems: archivedTasks, archivedTotalPages: taskArchivedTotalPages, isArchivedLoading } = useSelector((state) => state.tasks);
   
   const [activeTab, setActiveTab] = useState('projects'); // Default to projects tab
   
   const [archivedProjects, setArchivedProjects] = useState([]);
+  const [archivedProjectsTotalPages, setArchivedProjectsTotalPages] = useState(0);
   const [isProjectsLoading, setIsProjectsLoading] = useState(false);
   
   const [archivedUsers, setArchivedUsers] = useState([]);
+  const [archivedUsersTotalPages, setArchivedUsersTotalPages] = useState(0);
   const [isUsersLoading, setIsUsersLoading] = useState(false);
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentProjectPage, setCurrentProjectPage] = useState(1);
+  const [currentTaskPage, setCurrentTaskPage] = useState(1);
+  const [currentUserPage, setCurrentUserPage] = useState(1);
   const itemsPerPage = 10;
 
   const [searchInput, setSearchInput] = useState('');
@@ -34,26 +38,32 @@ const AdminArchive = () => {
     const timer = setTimeout(() => {
       if (searchInput.length >= 3 || searchInput.length === 0) {
         setDebouncedSearch(searchInput);
-        setCurrentPage(1);
+        // Reset to page 1 for active tab
+        if (activeTab === 'projects') setCurrentProjectPage(1);
+        else if (activeTab === 'tasks') setCurrentTaskPage(1);
+        else if (activeTab === 'users') setCurrentUserPage(1);
       }
     }, 3000);
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, activeTab]);
 
   useEffect(() => {
-    setCurrentPage(1);
+    setCurrentProjectPage(1);
+    setCurrentTaskPage(1);
+    setCurrentUserPage(1);
     setSearchInput('');
     setDebouncedSearch('');
   }, [activeTab]);
 
   useEffect(() => {
-    dispatch(getArchivedTasks());
+    dispatch(getArchivedTasks({ page: currentTaskPage, limit: itemsPerPage, search: debouncedSearch }));
     
     const fetchArchivedProjects = async () => {
       try {
         setIsProjectsLoading(true);
-        const res = await api.get('/projects?archived=true');
-        setArchivedProjects(res.data);
+        const res = await api.get('/projects', { params: { archived: true, page: currentProjectPage, limit: itemsPerPage, search: debouncedSearch } });
+        setArchivedProjects(res.data.projects || []);
+        setArchivedProjectsTotalPages(res.data.totalPages || 0);
       } catch (error) {
         console.error(error);
       } finally {
@@ -64,8 +74,9 @@ const AdminArchive = () => {
     const fetchArchivedUsers = async () => {
       try {
         setIsUsersLoading(true);
-        const res = await api.get('/auth/users?archived=true');
-        setArchivedUsers(res.data);
+        const res = await api.get('/auth/users', { params: { archived: true, page: currentUserPage, limit: itemsPerPage, search: debouncedSearch } });
+        setArchivedUsers(res.data.users || []);
+        setArchivedUsersTotalPages(res.data.totalPages || 0);
       } catch (error) {
         console.error(error);
       } finally {
@@ -75,7 +86,7 @@ const AdminArchive = () => {
     
     fetchArchivedProjects();
     fetchArchivedUsers();
-  }, [dispatch]);
+  }, [dispatch, currentProjectPage, currentTaskPage, currentUserPage, debouncedSearch]);
 
   const handleRestore = async (e, taskId, taskTitle) => {
     e.stopPropagation();
@@ -154,12 +165,12 @@ const AdminArchive = () => {
   };
 
   const handleDeleteAllProjects = async () => {
-    if (!filteredProjects.length) return;
-    if (!window.confirm(`PERMANENTLY delete ALL ${filteredProjects.length} displayed projects? This cannot be undone.`)) return;
+    if (!archivedProjects.length) return;
+    if (!window.confirm(`PERMANENTLY delete ALL ${archivedProjects.length} displayed projects? This cannot be undone.`)) return;
     toast.loading('Deleting projects...', { id: 'deleteAll' });
     try {
-      await Promise.all(filteredProjects.map(p => api.delete(`/projects/${p._id}/hard`)));
-      setArchivedProjects(archivedProjects.filter(p => !filteredProjects.find(fp => fp._id === p._id)));
+      await Promise.all(archivedProjects.map(p => api.delete(`/projects/${p._id}/hard`)));
+      setArchivedProjects(archivedProjects.filter(p => !archivedProjects.find(fp => fp._id === p._id)));
       toast.success(`Successfully deleted projects.`, { id: 'deleteAll' });
     } catch (error) {
       toast.error('Failed to delete some projects.', { id: 'deleteAll' });
@@ -168,12 +179,12 @@ const AdminArchive = () => {
   };
 
   const handleDeleteAllTasks = async () => {
-    if (!filteredTasks.length) return;
-    if (!window.confirm(`PERMANENTLY delete ALL ${filteredTasks.length} displayed tasks? This cannot be undone.`)) return;
+    if (!archivedTasks.length) return;
+    if (!window.confirm(`PERMANENTLY delete ALL ${archivedTasks.length} displayed tasks? This cannot be undone.`)) return;
     toast.loading('Deleting tasks...', { id: 'deleteAll' });
     try {
-      await Promise.all(filteredTasks.map(t => api.delete(`/tasks/${t._id}`)));
-      dispatch(getArchivedTasks());
+      await Promise.all(archivedTasks.map(t => api.delete(`/tasks/${t._id}`)));
+      dispatch(getArchivedTasks({ page: currentTaskPage, limit: itemsPerPage, search: debouncedSearch }));
       toast.success(`Successfully deleted tasks.`, { id: 'deleteAll' });
     } catch (error) {
       toast.error('Failed to delete some tasks.', { id: 'deleteAll' });
@@ -182,22 +193,18 @@ const AdminArchive = () => {
   };
 
   const handleDeleteAllUsers = async () => {
-    if (!filteredUsers.length) return;
-    if (!window.confirm(`PERMANENTLY delete ALL ${filteredUsers.length} displayed users? This cannot be undone.`)) return;
+    if (!archivedUsers.length) return;
+    if (!window.confirm(`PERMANENTLY delete ALL ${archivedUsers.length} displayed users? This cannot be undone.`)) return;
     toast.loading('Deleting users...', { id: 'deleteAll' });
     try {
-      await Promise.all(filteredUsers.map(u => api.delete(`/auth/users/${u._id}/hard`)));
-      setArchivedUsers(archivedUsers.filter(u => !filteredUsers.find(fu => fu._id === u._id)));
+      await Promise.all(archivedUsers.map(u => api.delete(`/auth/users/${u._id}/hard`)));
+      setArchivedUsers(archivedUsers.filter(u => !archivedUsers.find(fu => fu._id === u._id)));
       toast.success(`Successfully deleted users.`, { id: 'deleteAll' });
     } catch (error) {
       toast.error('Failed to delete some users.', { id: 'deleteAll' });
       console.error(error);
     }
   };
-
-  const filteredProjects = archivedProjects.filter(p => p.title.toLowerCase().includes(debouncedSearch.toLowerCase()));
-  const filteredTasks = archivedTasks.filter(t => t.title.toLowerCase().includes(debouncedSearch.toLowerCase()));
-  const filteredUsers = archivedUsers.filter(u => u.name.toLowerCase().includes(debouncedSearch.toLowerCase()) || u.email.toLowerCase().includes(debouncedSearch.toLowerCase()));
 
   return (
     <div className="h-full flex flex-col">
@@ -251,10 +258,10 @@ const AdminArchive = () => {
               <div>
                 <span className="font-semibold text-gray-700">Archived Projects</span>
                 <span className="text-sm text-gray-400 ml-2">
-                  {isProjectsLoading ? '...' : `${filteredProjects.length} project${filteredProjects.length !== 1 ? 's' : ''}`}
+                  {isProjectsLoading ? '...' : `${archivedProjects.length} project${archivedProjects.length !== 1 ? 's' : ''}`}
                 </span>
               </div>
-              {filteredProjects.length > 0 && (
+              {archivedProjects.length > 0 && (
                 <button
                   onClick={handleDeleteAllProjects}
                   className="inline-flex items-center gap-1.5 text-sm bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-md font-medium transition"
@@ -264,7 +271,7 @@ const AdminArchive = () => {
               )}
             </div>
             <div className="overflow-auto flex-1">
-              <table className="w-full text-left border-collapse min-w-max">
+              <table className="w-full text-left border-collapse text-sm">
                 <thead>
                   <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
                     <th className="p-4 font-medium">Project Name</th>
@@ -278,9 +285,7 @@ const AdminArchive = () => {
                   ) : archivedProjects.length === 0 ? (
                     <tr><td colSpan="3" className="text-center p-12 text-gray-400">No archived projects found.</td></tr>
                   ) : (
-                    (() => {
-                      const paginatedProjects = filteredProjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-                      return paginatedProjects.map(project => (
+                    archivedProjects.map(project => (
                       <tr key={project._id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
@@ -299,16 +304,15 @@ const AdminArchive = () => {
                         </td>
                       </tr>
                     ))
-                  })()
                   )}
                 </tbody>
               </table>
             </div>
-            {!isProjectsLoading && filteredProjects.length > 0 && (
+            {!isProjectsLoading && archivedProjects.length > 0 && (
               <Pagination
-                currentPage={currentPage}
-                totalPages={Math.ceil(filteredProjects.length / itemsPerPage)}
-                onPageChange={setCurrentPage}
+                currentPage={currentProjectPage}
+                totalPages={archivedProjectsTotalPages}
+                onPageChange={setCurrentProjectPage}
               />
             )}
           </>
@@ -320,10 +324,10 @@ const AdminArchive = () => {
               <div>
                 <span className="font-semibold text-gray-700">Archived Tasks</span>
                 <span className="text-sm text-gray-400 ml-2">
-                  {isArchivedLoading ? '...' : `${filteredTasks.length} task${filteredTasks.length !== 1 ? 's' : ''}`}
+                  {isArchivedLoading ? '...' : `${archivedTasks.length} task${archivedTasks.length !== 1 ? 's' : ''}`}
                 </span>
               </div>
-              {filteredTasks.length > 0 && (
+              {archivedTasks.length > 0 && (
                 <button
                   onClick={handleDeleteAllTasks}
                   className="inline-flex items-center gap-1.5 text-sm bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-md font-medium transition"
@@ -333,7 +337,7 @@ const AdminArchive = () => {
               )}
             </div>
             <div className="overflow-auto flex-1">
-              <table className="w-full text-left border-collapse min-w-max">
+              <table className="w-full text-left border-collapse text-sm">
                 <thead>
                   <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
                     <th className="p-4 font-medium">Task Title</th>
@@ -349,9 +353,7 @@ const AdminArchive = () => {
                   ) : archivedTasks.length === 0 ? (
                     <tr><td colSpan="5" className="text-center p-12 text-gray-400">No archived tasks found.</td></tr>
                   ) : (
-                    (() => {
-                      const paginatedTasks = filteredTasks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-                      return paginatedTasks.map(task => (
+                    archivedTasks.map(task => (
                       <tr key={task._id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                         <td className="p-4"><p className="font-medium text-gray-800">{task.title}</p></td>
                         <td className="p-4"><div className="flex items-center gap-1.5 text-gray-600 text-sm"><FolderOpen className="h-4 w-4 text-gray-400 flex-shrink-0" />{task.project?.title || 'Unknown'}</div></td>
@@ -369,16 +371,15 @@ const AdminArchive = () => {
                         </td>
                       </tr>
                     ))
-                  })()
                   )}
                 </tbody>
               </table>
             </div>
-            {!isArchivedLoading && filteredTasks.length > 0 && (
+            {!isArchivedLoading && archivedTasks.length > 0 && (
               <Pagination
-                currentPage={currentPage}
-                totalPages={Math.ceil(filteredTasks.length / itemsPerPage)}
-                onPageChange={setCurrentPage}
+                currentPage={currentTaskPage}
+                totalPages={taskArchivedTotalPages}
+                onPageChange={setCurrentTaskPage}
               />
             )}
           </>
@@ -390,10 +391,10 @@ const AdminArchive = () => {
               <div>
                 <span className="font-semibold text-gray-700">Archived Users</span>
                 <span className="text-sm text-gray-400 ml-2">
-                  {isUsersLoading ? '...' : `${filteredUsers.length} user${filteredUsers.length !== 1 ? 's' : ''}`}
+                  {isUsersLoading ? '...' : `${archivedUsers.length} user${archivedUsers.length !== 1 ? 's' : ''}`}
                 </span>
               </div>
-              {filteredUsers.length > 0 && (
+              {archivedUsers.length > 0 && (
                 <button
                   onClick={handleDeleteAllUsers}
                   className="inline-flex items-center gap-1.5 text-sm bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-md font-medium transition"
@@ -403,7 +404,7 @@ const AdminArchive = () => {
               )}
             </div>
             <div className="overflow-auto flex-1">
-              <table className="w-full text-left border-collapse min-w-max">
+              <table className="w-full text-left border-collapse text-sm">
                 <thead>
                   <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
                     <th className="p-4 font-medium">Name</th>
@@ -418,9 +419,7 @@ const AdminArchive = () => {
                   ) : archivedUsers.length === 0 ? (
                     <tr><td colSpan="4" className="text-center p-12 text-gray-400">No archived users found.</td></tr>
                   ) : (
-                    (() => {
-                      const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-                      return paginatedUsers.map(user => (
+                    archivedUsers.map(user => (
                       <tr key={user._id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
@@ -438,16 +437,15 @@ const AdminArchive = () => {
                         </td>
                       </tr>
                     ))
-                  })()
                   )}
                 </tbody>
               </table>
             </div>
-            {!isUsersLoading && filteredUsers.length > 0 && (
+            {!isUsersLoading && archivedUsers.length > 0 && (
               <Pagination
-                currentPage={currentPage}
-                totalPages={Math.ceil(filteredUsers.length / itemsPerPage)}
-                onPageChange={setCurrentPage}
+                currentPage={currentUserPage}
+                totalPages={archivedUsersTotalPages}
+                onPageChange={setCurrentUserPage}
               />
             )}
           </>

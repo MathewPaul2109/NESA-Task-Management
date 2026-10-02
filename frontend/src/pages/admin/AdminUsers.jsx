@@ -11,8 +11,10 @@ import TaskModal from '../user/TaskModal';
 
 const AdminUsers = () => {
   const dispatch = useDispatch();
-  const { tasks } = useSelector((state) => state.tasks || { tasks: [] });
+  const { items: tasks } = useSelector((state) => state.tasks || { items: [] });
   const [users, setUsers] = useState([]);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [updatingUserId, setUpdatingUserId] = useState(null);
   
@@ -45,8 +47,12 @@ const AdminUsers = () => {
 
     const fetchUsers = async () => {
       try {
-        const response = await api.get('/auth/users?archived=false');
-        setUsers(response.data);
+        const response = await api.get('/auth/users', {
+          params: { archived: false, page: currentPage, limit: itemsPerPage, search: debouncedSearch }
+        });
+        setUsers(response.data.users || []);
+        setTotalUsers(response.data.total || 0);
+        setTotalPages(response.data.totalPages || 0);
       } catch (error) {
         console.error('Failed to fetch users:', error);
       } finally {
@@ -54,12 +60,9 @@ const AdminUsers = () => {
       }
     };
     fetchUsers();
-  }, [dispatch]);
+  }, [dispatch, currentPage, debouncedSearch]);
 
-  const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(debouncedSearch.toLowerCase()) || 
-    u.email.toLowerCase().includes(debouncedSearch.toLowerCase())
-  );
+  const filteredUsers = users;
 
   // Helper to get tasks for a specific user
   const getUserTasks = (userId) => {
@@ -136,8 +139,8 @@ const AdminUsers = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col overflow-hidden">
-        <div className="overflow-auto flex-1">
-          <table className="w-full text-left border-collapse min-w-max">
+        <div className="overflow-auto max-h-[400px] md:max-h-none md:flex-1">
+          <table className="w-full text-left border-collapse text-sm">
             <thead>
               <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
                 <th className="p-4 font-medium">User</th>
@@ -157,8 +160,7 @@ const AdminUsers = () => {
                 </tr>
               ) : (
                 (() => {
-                  const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-                  return paginatedUsers.map(user => {
+                  return users.map(user => {
                   const userTasks = getUserTasks(user._id);
                   const completedTasks = userTasks.filter(t => t.status === 'Done').length;
                   const activeTasks = userTasks.length - completedTasks;
@@ -257,7 +259,7 @@ const AdminUsers = () => {
         {!isLoadingUsers && filteredUsers.length > 0 && (
           <Pagination
             currentPage={currentPage}
-            totalPages={Math.ceil(filteredUsers.length / itemsPerPage)}
+            totalPages={totalPages}
             onPageChange={setCurrentPage}
           />
         )}

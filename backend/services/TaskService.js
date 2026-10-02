@@ -5,7 +5,7 @@ const logAction = require('../utils/logger');
 const sendEmail = require('../utils/sendEmail');
 
 class TaskService {
-  async getTasksForUser(user, projectId) {
+  async getTasksForUser(user, projectId, page = 1, limit = 10, search = '') {
     let query = {};
 
     if (projectId) {
@@ -33,7 +33,21 @@ class TaskService {
       }
     }
 
-    return await TaskRepository.findTasks(query);
+    // Add search filter
+    if (search) {
+      if (query.$or || query.$and) {
+        query = {
+          $and: [
+            query,
+            { title: { $regex: search, $options: 'i' } }
+          ]
+        };
+      } else {
+        query.title = { $regex: search, $options: 'i' };
+      }
+    }
+
+    return await TaskRepository.findTasksPaginated(query, page, limit);
   }
 
   async createTask(user, taskData, io) {
@@ -142,8 +156,9 @@ class TaskService {
     return archivedTask;
   }
 
-  async getArchivedTasks() {
-    return await TaskRepository.findArchivedTasks();
+  async getArchivedTasks(page = 1, limit = 10, search = '') {
+    const query = search ? { title: { $regex: search, $options: 'i' } } : {};
+    return await TaskRepository.findArchivedTasksPaginated(query, page, limit);
   }
 
   async restoreTask(user, taskId, io) {

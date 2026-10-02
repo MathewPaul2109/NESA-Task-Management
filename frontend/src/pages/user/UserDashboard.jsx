@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getTasks, updateTask } from '../../features/tasks/taskSlice';
 import { appendComment } from '../../features/comments/commentSlice';
@@ -9,6 +9,8 @@ import TaskModal from './TaskModal';
 import {
   DndContext,
   PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragOverlay,
@@ -75,66 +77,63 @@ const DraggableCard = ({ task, onOpen, getDueDateStatus, dispatch }) => {
         'border-l-transparent'
       }`}
     >
-      <div>
-
-        {/* Due date warning badge */}
-        {dueDateStatus && (
-          <div className={`flex items-center gap-1 text-xs font-medium mb-1.5 ${
-            dueDateStatus === 'overdue' ? 'text-red-600' : 'text-amber-600'
-          }`}>
-            {dueDateStatus === 'overdue'
-              ? <><AlertTriangle className="h-3 w-3" /> Overdue</>
-              : <><Clock className="h-3 w-3" /> Due soon</>
-            }
-            <span className="ml-1 font-normal opacity-80">
-              — {new Date(task.dueDate).toLocaleDateString()}
-            </span>
-          </div>
-        )}
-
-        <h4 className="font-medium text-gray-900 text-sm mb-0.5 break-words">{task.title}</h4>
-        <p className="text-xs text-gray-500 line-clamp-2 mb-2 break-words">{task.description?.replace(/<[^>]*>?/gm, '')}</p>
-
-        {/* Progress Bar */}
-        <div className="mb-2">
-          <div className="flex justify-between text-xs text-gray-400 mb-0.5">
-            <span>Progress</span>
-            <span>{progress}%</span>
-          </div>
-          <div className="w-full bg-gray-100 rounded-full h-1">
-            <div
-              className={`h-1 rounded-full ${progress === 100 ? 'bg-green-500' : 'bg-blue-500'} transition-all duration-300`}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-between items-center text-xs">
-          <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-            task.priority === 'High'   ? 'bg-red-100 text-red-700' :
-            task.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-            'bg-green-100 text-green-700'
-          }`}>
-            {task.priority}
+      {/* Due date warning badge */}
+      {dueDateStatus && (
+        <div className={`flex items-center gap-1 text-xs font-medium mb-1.5 ${
+          dueDateStatus === 'overdue' ? 'text-red-600' : 'text-amber-600'
+        }`}>
+          {dueDateStatus === 'overdue'
+            ? <><AlertTriangle className="h-3 w-3" /> Overdue</>
+            : <><Clock className="h-3 w-3" /> Due soon</>
+          }
+          <span className="ml-1 font-normal opacity-80">
+            — {new Date(task.dueDate).toLocaleDateString()}
           </span>
-
-          {/* Quick status select — stops propagation so drag doesn't fire */}
-          <select
-            className="border border-gray-200 rounded p-0.5 text-xs text-gray-600 bg-gray-50 outline-none focus:border-blue-300 relative z-20"
-            value={task.status}
-            onClick={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-            onChange={(e) => {
-              e.stopPropagation();
-              dispatch(updateTask({ id: task._id, taskData: { status: e.target.value } }));
-            }}
-          >
-            <option value="To Do">To Do</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Review">Review</option>
-            <option value="Done">Done</option>
-          </select>
         </div>
+      )}
+
+      <h4 className="font-medium text-gray-900 text-sm mb-0.5 break-words">{task.title}</h4>
+      <p className="text-xs text-gray-500 line-clamp-2 mb-2 break-words">{task.description?.replace(/<[^>]*>?/gm, '')}</p>
+
+      {/* Progress Bar */}
+      <div className="mb-2">
+        <div className="flex justify-between text-xs text-gray-400 mb-0.5">
+          <span>Progress</span>
+          <span>{progress}%</span>
+        </div>
+        <div className="w-full bg-gray-100 rounded-full h-1">
+          <div
+            className={`h-1 rounded-full ${progress === 100 ? 'bg-green-500' : 'bg-blue-500'} transition-all duration-300`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center text-xs">
+        <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+          task.priority === 'High'   ? 'bg-red-100 text-red-700' :
+          task.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+          'bg-green-100 text-green-700'
+        }`}>
+          {task.priority}
+        </span>
+
+        {/* Quick status select — stops propagation so drag doesn't fire */}
+        <select
+          className="border border-gray-200 rounded p-0.5 text-xs text-gray-600 bg-gray-50 outline-none focus:border-blue-300 relative z-20"
+          value={task.status}
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          onChange={(e) => {
+            e.stopPropagation();
+            dispatch(updateTask({ id: task._id, taskData: { status: e.target.value } }));
+          }}
+        >
+          <option value="To Do">To Do</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Review">Review</option>
+          <option value="Done">Done</option>
+        </select>
       </div>
     </div>
   );
@@ -160,16 +159,18 @@ const COLUMNS = ['To Do', 'In Progress', 'Review', 'Done'];
 
 const UserDashboard = () => {
   const dispatch = useDispatch();
-  const { tasks, isLoading } = useSelector((state) => state.tasks);
+  const { items: tasks, isLoading } = useSelector((state) => state.tasks);
   const { user } = useSelector((state) => state.auth);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTask, setActiveTask] = useState(null); // task being dragged
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      // Require user to hold the card for 500ms before dragging
-      activationConstraint: { delay: 500, tolerance: 5 },
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: 10 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 100, tolerance: 5 },
     })
   );
 
@@ -190,13 +191,19 @@ const UserDashboard = () => {
     setIsModalOpen(true);
   };
 
+  const socketRef = useRef(null);
+
   useEffect(() => {
-    dispatch(getTasks());
+    dispatch(getTasks({ page: 1, limit: 1000 }));
+
+    // Guard against StrictMode / fast-refresh double-registration
+    if (socketRef.current) return;
 
     const socket = io('http://localhost:5000');
+    socketRef.current = socket;
 
-    socket.on('task_updated', () => dispatch(getTasks()));
-    socket.on('task_created', () => dispatch(getTasks()));
+    socket.on('task_updated', () => dispatch(getTasks({ page: 1, limit: 1000 })));
+    socket.on('task_created', () => dispatch(getTasks({ page: 1, limit: 1000 })));
     socket.on('new_comment', (comment) => {
       dispatch(appendComment(comment));
       if (comment.author?._id !== user?._id) {
@@ -204,12 +211,19 @@ const UserDashboard = () => {
       }
     });
 
-    return () => socket.disconnect();
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
   }, [dispatch, user?._id]);
 
-  const myTasks = tasks.filter(t =>
-    t.assignedTo?.some(a => a._id === user?._id || a === user?._id)
-  ).filter(t => t.title.toLowerCase().includes(debouncedSearch.toLowerCase()) || (t.description || '').toLowerCase().includes(debouncedSearch.toLowerCase()));
+  const myTasks = Array.isArray(tasks) && tasks.length > 0 
+    ? tasks.filter(t =>
+        t && t.assignedTo && t.assignedTo.some(a => a._id === user?._id || a === user?._id)
+      ).filter(t => 
+        t && t.title && (t.title.toLowerCase().includes(debouncedSearch.toLowerCase()) || (t.description || '').toLowerCase().includes(debouncedSearch.toLowerCase()))
+      )
+    : [];
 
   const columns = Object.fromEntries(
     COLUMNS.map(status => [status, myTasks.filter(t => t.status === status)])
@@ -254,7 +268,7 @@ const UserDashboard = () => {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col min-h-screen">
       <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-gray-800">My Tasks</h2>
@@ -330,7 +344,7 @@ const UserDashboard = () => {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1 min-h-0 lg:overflow-hidden pb-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 flex-1 pb-4" style={{ minHeight: 'calc(100vh - 400px)' }}>
             {COLUMNS.map(status => (
               <DroppableColumn
                 key={status}

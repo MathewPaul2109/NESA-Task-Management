@@ -24,6 +24,16 @@ class UserRepository {
     return await User.find(query).select('-password');
   }
 
+  // Paginated version — returns { users, total, totalPages, currentPage }
+  async findUsersPaginated(query = {}, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const [users, total] = await Promise.all([
+      User.find(query).select('-password').sort({ createdAt: -1 }).skip(skip).limit(limit),
+      User.countDocuments(query),
+    ]);
+    return { users, total, totalPages: Math.ceil(total / limit), currentPage: page };
+  }
+
   async countUsers(query = {}) {
     return await User.countDocuments(query);
   }

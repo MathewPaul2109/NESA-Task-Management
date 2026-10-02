@@ -7,6 +7,22 @@ class TaskRepository {
       .populate('assignedTo', 'name email');
   }
 
+  // Paginated version — returns { tasks, total, totalPages, currentPage }
+  async findTasksPaginated(query, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const fullQuery = { ...query, isArchived: { $ne: true } };
+    const [tasks, total] = await Promise.all([
+      Task.find(fullQuery)
+        .populate('project', 'title')
+        .populate('assignedTo', 'name email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Task.countDocuments(fullQuery),
+    ]);
+    return { tasks, total, totalPages: Math.ceil(total / limit), currentPage: page };
+  }
+
   async findTaskById(id) {
     return await Task.findById(id);
   }
@@ -49,6 +65,22 @@ class TaskRepository {
       .populate('project', 'title')
       .populate('assignedTo', 'name email')
       .sort({ archivedAt: -1 });
+  }
+
+  // Paginated archived tasks
+  async findArchivedTasksPaginated(query = {}, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const fullQuery = { ...query, isArchived: true };
+    const [tasks, total] = await Promise.all([
+      Task.find(fullQuery)
+        .populate('project', 'title')
+        .populate('assignedTo', 'name email')
+        .sort({ archivedAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Task.countDocuments(fullQuery),
+    ]);
+    return { tasks, total, totalPages: Math.ceil(total / limit), currentPage: page };
   }
 }
 

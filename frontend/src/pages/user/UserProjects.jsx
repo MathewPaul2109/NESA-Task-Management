@@ -9,8 +9,8 @@ import Pagination from '../../components/Pagination';
 
 const UserProjects = () => {
   const dispatch = useDispatch();
-  const { projects, isLoading: isProjectsLoading } = useSelector((state) => state.projects);
-  const { tasks } = useSelector((state) => state.tasks || { tasks: [] });
+  const { items: projects, isLoading: isProjectsLoading } = useSelector((state) => state.projects);
+  const { items: tasks } = useSelector((state) => state.tasks || { items: [] });
   const [activeChatProject, setActiveChatProject] = React.useState(null);
   const [activeTasksProject, setActiveTasksProject] = React.useState(null);
 
@@ -35,7 +35,7 @@ const UserProjects = () => {
     dispatch(getTasks());
   }, [dispatch]);
 
-  const filteredProjects = projects.filter(p => p.title.toLowerCase().includes(debouncedSearch.toLowerCase()));
+  const filteredProjects = (projects || []).filter(p => p.title.toLowerCase().includes(debouncedSearch.toLowerCase()));
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -54,7 +54,7 @@ const UserProjects = () => {
 
       {isProjectsLoading ? (
         <div className="text-center text-gray-500">Loading projects...</div>
-      ) : projects.length === 0 ? (
+      ) : !projects || projects.length === 0 ? (
         <div className="text-center text-gray-500 mt-10">You are not assigned to any projects yet.</div>
       ) : (
         <div className="flex-1 overflow-y-auto pr-2 pb-6 flex flex-col">
@@ -62,7 +62,7 @@ const UserProjects = () => {
           {(() => {
             const paginatedProjects = filteredProjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
             return paginatedProjects.map(project => {
-            const projectTasks = tasks.filter(t => (t.project?._id || t.project) === project._id);
+            const projectTasks = (tasks || []).filter(t => (t.project?._id || t.project) === project._id);
             const totalTasks = projectTasks.length;
             const completedTasks = projectTasks.filter(t => t.status === 'Done').length;
             const progressPercentage = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);

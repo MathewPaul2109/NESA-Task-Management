@@ -5,9 +5,9 @@ const TaskService = require('../services/TaskService');
 // @access  Private
 const getTasks = async (req, res) => {
   try {
-    const { projectId } = req.query;
-    const tasks = await TaskService.getTasksForUser(req.user, projectId);
-    res.json(tasks);
+    const { projectId, page = 1, limit = 10, search = '' } = req.query;
+    const result = await TaskService.getTasksForUser(req.user, projectId, parseInt(page), parseInt(limit), search);
+    res.json(result);
   } catch (error) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ message: error.message });
@@ -81,8 +81,9 @@ const uploadTaskFile = async (req, res) => {
 // @access  Private (Admin, PM)
 const getArchivedTasks = async (req, res) => {
   try {
-    const tasks = await TaskService.getArchivedTasks();
-    res.json(tasks);
+    const { page = 1, limit = 10, search = '' } = req.query;
+    const result = await TaskService.getArchivedTasks(parseInt(page), parseInt(limit), search);
+    res.json(result);
   } catch (error) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ message: error.message });

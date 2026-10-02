@@ -8,8 +8,10 @@ import RichTextEditor from '../../components/RichTextEditor';
 
 const AdminTaskModal = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
-  const { projects } = useSelector((state) => state.projects);
+  const { items: projects } = useSelector((state) => state.projects);
   const [users, setUsers] = useState([]);
+  const [projectSearch, setProjectSearch] = useState('');
+  const [userSearch, setUserSearch] = useState('');
   
   const [formData, setFormData] = useState({
     title: '',
@@ -24,13 +26,17 @@ const AdminTaskModal = ({ isOpen, onClose }) => {
     const fetchUsers = async () => {
       try {
         const response = await api.get('/auth/users');
-        setUsers(response.data);
+        // Handle if response.data is an array or an object with users property
+        const userList = Array.isArray(response.data) ? response.data : response.data.users || [];
+        setUsers(userList);
       } catch (error) {
         console.error('Failed to fetch users:', error);
       }
     };
     if (isOpen) {
       fetchUsers();
+      setProjectSearch('');
+      setUserSearch('');
     }
   }, [isOpen]);
 
@@ -86,25 +92,43 @@ const AdminTaskModal = ({ isOpen, onClose }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Project</label>
+            <input 
+              type="text" 
+              placeholder="Search projects..." 
+              className="w-full border rounded-md p-2 mb-2 text-sm"
+              value={projectSearch}
+              onChange={(e) => setProjectSearch(e.target.value)}
+            />
             <select required className="w-full border rounded-md p-2" value={formData.project} onChange={(e) => setFormData({...formData, project: e.target.value})}>
               <option value="">Select Project</option>
-              {projects.map(p => (
-                <option key={p._id} value={p._id}>{p.title}</option>
-              ))}
+              {(projects || [])
+                .filter(p => p.title.toLowerCase().includes(projectSearch.toLowerCase()))
+                .map(p => (
+                  <option key={p._id} value={p._id}>{p.title}</option>
+                ))}
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Assignees (Hold Ctrl/Cmd to select multiple)</label>
+            <input 
+              type="text" 
+              placeholder="Search users by name..." 
+              className="w-full border rounded-md p-2 mb-2 text-sm"
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+            />
             <select 
               multiple 
               className="w-full border rounded-md p-2 h-24" 
               value={formData.assignedTo} 
               onChange={handleUserSelect}
             >
-              {users.filter(u => u.role === 'User').map(u => (
-                <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
-              ))}
+              {(users || [])
+                .filter(u => u.role === 'User' && u.name.toLowerCase().includes(userSearch.toLowerCase()))
+                .map(u => (
+                  <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
+                ))}
             </select>
           </div>
 

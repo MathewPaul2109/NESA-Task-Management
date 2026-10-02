@@ -3,12 +3,12 @@ import { X, Clock, User as UserIcon } from 'lucide-react';
 import { useSelector } from 'react-redux';
 
 const ProjectTasksModal = ({ isOpen, onClose, project }) => {
-  const { tasks } = useSelector((state) => state.tasks || { tasks: [] });
+  const { items: tasks } = useSelector((state) => state.tasks || { items: [] });
   
   if (!isOpen || !project) return null;
 
   // Filter tasks for this project that are NOT 'Done'
-  const pendingTasks = tasks.filter(t => 
+  const pendingTasks = (tasks || []).filter(t => 
     (t.project?._id || t.project) === project._id && t.status !== 'Done'
   );
 

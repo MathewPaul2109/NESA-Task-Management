@@ -151,8 +151,8 @@ class AuthService {
     return user;
   }
 
-  async getUsers(query = {}) {
-    return await UserRepository.findUsers(query);
+  async getUsers(query = {}, page = 1, limit = 10) {
+    return await UserRepository.findUsersPaginated(query, page, limit);
   }
 
   async updateUserRole(adminUserId, targetUserId, newRole) {

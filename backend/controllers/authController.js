@@ -81,10 +81,20 @@ const getMe = async (req, res) => {
 // @access  Private/Admin
 const getUsers = async (req, res) => {
   try {
-    const isArchived = req.query.archived === 'true';
+    const { archived, page = 1, limit = 10, search = '' } = req.query;
+    const isArchived = archived === 'true';
     const query = isArchived ? { isArchived: true } : { isArchived: { $ne: true } };
-    const users = await AuthService.getUsers(query);
-    res.json(users);
+    
+    // Add search filter
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    const result = await AuthService.getUsers(query, parseInt(page), parseInt(limit));
+    res.json(result);
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }

@@ -22,21 +22,34 @@ const Login = () => {
     (state) => state.auth
   );
 
+  // Redirect already-logged-in users away from the login page on mount
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'Admin' || user.role === 'Project Manager') {
+        navigate('/admin/dashboard', { replace: true });
+      } else {
+        navigate('/user/dashboard', { replace: true });
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Handle login response
   useEffect(() => {
     if (isError) {
       toast.error(message);
+      dispatch(reset());
     }
 
-    if (isSuccess || user) {
+    if (isSuccess && user) {
       if (user.role === 'Admin' || user.role === 'Project Manager') {
-        navigate('/admin/dashboard');
+        navigate('/admin/dashboard', { replace: true });
       } else {
-        navigate('/user/dashboard');
+        navigate('/user/dashboard', { replace: true });
       }
+      dispatch(reset());
     }
-
-    dispatch(reset());
-  }, [user, isError, isSuccess, message, navigate, dispatch]);
+  }, [isSuccess, isError, message, user, navigate, dispatch]);
 
   const onChange = (e) => {
     setFormData((prevState) => ({

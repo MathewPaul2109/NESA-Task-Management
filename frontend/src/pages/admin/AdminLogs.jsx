@@ -6,6 +6,8 @@ import Pagination from '../../components/Pagination';
 
 const AdminLogs = () => {
   const [logs, setLogs] = useState([]);
+  const [totalLogs, setTotalLogs] = useState(0);
+  const [totalLogsPages, setTotalLogsPages] = useState(0);
   const [users, setUsers] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   
@@ -28,23 +30,21 @@ const AdminLogs = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [logsRes, usersRes] = await Promise.all([
-          api.get('/logs'),
-          api.get('/auth/users?archived=true') // Fetching all (active + archived backend might need just users, but let's fetch all we can or use another route)
+        const [logsRes, archivedUsersRes, activeUsersRes] = await Promise.all([
+          api.get('/logs', { params: { page: currentPage, limit: itemsPerPage, search: debouncedSearch } }),
+          api.get('/auth/users?archived=true'),
+          api.get('/auth/users?archived=false'),
         ]);
-        
-        // In backend, ?archived=true ONLY gets archived users. We need all users. 
-        // We'll just fetch without query for active, but wait, the backend doesn't have an "all" endpoint. 
-        // Let's just fetch active users, it's better than nothing for now.
-        const usersResActive = await api.get('/auth/users?archived=false');
-        
+
         const userMap = {};
-        [...usersRes.data, ...usersResActive.data].forEach(u => {
+        [...(archivedUsersRes.data.users || archivedUsersRes.data), ...( activeUsersRes.data.users || activeUsersRes.data)].forEach(u => {
           userMap[u._id] = u.name;
         });
-        
+
         setUsers(userMap);
-        setLogs(logsRes.data);
+        setLogs(logsRes.data.logs || []);
+        setTotalLogs(logsRes.data.total || 0);
+        setTotalLogsPages(logsRes.data.totalPages || 0);
       } catch (error) {
         toast.error('Failed to fetch data');
         console.error(error);
@@ -53,7 +53,7 @@ const AdminLogs = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [currentPage, debouncedSearch]);
 
   const getActionIcon = (action) => {
     if (action.includes('PROJECT')) return <FolderGit2 className="h-4 w-4 text-purple-500" />;
@@ -135,8 +135,8 @@ const AdminLogs = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col overflow-hidden">
-        <div className="overflow-auto flex-1">
-          <table className="w-full text-left border-collapse min-w-max">
+        <div className="overflow-auto max-h-[400px] md:max-h-none md:flex-1">
+          <table className="w-full text-left border-collapse text-sm">
             <thead>
               <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
                 <th className="p-4 font-medium">Timestamp</th>
@@ -156,8 +156,7 @@ const AdminLogs = () => {
                 </tr>
               ) : (
                 (() => {
-                  const paginatedLogs = filteredLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-                  return paginatedLogs.map((log) => (
+                  return logs.map((log) => (
                   <tr key={log._id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                     <td className="p-4 align-top">
                       <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -201,7 +200,7 @@ const AdminLogs = () => {
         {!isLoading && filteredLogs.length > 0 && (
           <Pagination
             currentPage={currentPage}
-            totalPages={Math.ceil(filteredLogs.length / itemsPerPage)}
+            totalPages={totalLogsPages}
             onPageChange={setCurrentPage}
           />
         )}

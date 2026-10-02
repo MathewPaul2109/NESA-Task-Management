@@ -2,7 +2,10 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
 
 const initialState = {
-  projects: [],
+  items: [],
+  total: 0,
+  totalPages: 0,
+  currentPage: 1,
   isError: false,
   isSuccess: false,
   isLoading: false,
@@ -63,7 +66,10 @@ export const projectSlice = createSlice({
       .addCase(getProjects.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.projects = action.payload;
+        state.items = action.payload.projects || [];
+        state.total = action.payload.total || 0;
+        state.totalPages = action.payload.totalPages || 0;
+        state.currentPage = action.payload.currentPage || 1;
       })
       .addCase(getProjects.rejected, (state, action) => {
         state.isLoading = false;
@@ -76,7 +82,7 @@ export const projectSlice = createSlice({
       .addCase(createProject.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.projects.push(action.payload);
+        state.items.push(action.payload);
       })
       .addCase(createProject.rejected, (state, action) => {
         state.isLoading = false;
@@ -84,13 +90,13 @@ export const projectSlice = createSlice({
         state.message = action.payload;
       })
       .addCase(updateProject.fulfilled, (state, action) => {
-        const index = state.projects.findIndex(p => p._id === action.payload._id);
+        const index = state.items.findIndex(p => p._id === action.payload._id);
         if (index !== -1) {
-          state.projects[index] = action.payload;
+          state.items[index] = action.payload;
         }
       })
       .addCase(deleteProject.fulfilled, (state, action) => {
-        state.projects = state.projects.filter(p => p._id !== action.payload);
+        state.items = state.items.filter(p => p._id !== action.payload);
       });
   },
 });

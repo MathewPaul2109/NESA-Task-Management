@@ -7,7 +7,10 @@ class ProjectService {
   async getProjectsForUser(user, queryParams = {}) {
     let query = {};
     const filters = [];
-    
+
+    const page  = parseInt(queryParams.page)  || 1;
+    const limit = parseInt(queryParams.limit) || 10;
+
     if (queryParams.archived === 'true') {
       filters.push({ isArchived: true });
     } else {
@@ -17,13 +20,12 @@ class ProjectService {
     if (user.role === 'User') {
       const assignedTasks = await TaskRepository.findTasksAssignedToUser(user._id);
       const projectIdsFromTasks = assignedTasks.map(t => t.project);
-
-      filters.push({ 
+      filters.push({
         $or: [
-          { members: user._id }, 
+          { members: user._id },
           { manager: user._id },
           { _id: { $in: projectIdsFromTasks } }
-        ] 
+        ]
       });
     } else if (user.role === 'Project Manager') {
       filters.push({
@@ -37,7 +39,7 @@ class ProjectService {
     if (queryParams.search) {
       filters.push({ title: { $regex: queryParams.search, $options: 'i' } });
     }
-    
+
     if (queryParams.status) {
       filters.push({ status: queryParams.status });
     }
@@ -46,9 +48,10 @@ class ProjectService {
       query = { $and: filters };
     }
 
-    const projects = await ProjectRepository.findProjects(query);
+    const result = await ProjectRepository.findProjectsPaginated(query, page, limit);
 
-    for (let p of projects) {
+    // Merge task-based member counts into each project
+    for (let p of result.projects) {
       const tasks = await TaskRepository.findTasksByProjectId(p._id);
       const uniqueMembers = new Set(p.members.map(id => id.toString()));
       tasks.forEach(t => {
@@ -57,7 +60,7 @@ class ProjectService {
       p.members = Array.from(uniqueMembers);
     }
 
-    return projects;
+    return result;
   }
 
   async getProjectById(user, projectId) {

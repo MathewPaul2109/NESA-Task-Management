@@ -9,6 +9,8 @@ import RichTextEditor from '../../components/RichTextEditor';
 const ProjectModal = ({ isOpen, onClose, editProject }) => {
   const dispatch = useDispatch();
   const [users, setUsers] = useState([]);
+  const [managerSearch, setManagerSearch] = useState('');
+  const [memberSearch, setMemberSearch] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -21,13 +23,17 @@ const ProjectModal = ({ isOpen, onClose, editProject }) => {
     const fetchUsers = async () => {
       try {
         const response = await api.get('/auth/users');
-        setUsers(response.data);
+        // Handle if response.data is an array or an object with users property
+        const userList = Array.isArray(response.data) ? response.data : response.data.users || [];
+        setUsers(userList);
       } catch (error) {
         console.error('Failed to fetch users:', error);
       }
     };
     if (isOpen) {
       fetchUsers();
+      setManagerSearch('');
+      setMemberSearch('');
       if (editProject) {
         setFormData({
           title: editProject.title,
@@ -101,6 +107,13 @@ const ProjectModal = ({ isOpen, onClose, editProject }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Assign Project Manager</label>
+            <input 
+              type="text" 
+              placeholder="Search managers..." 
+              className="w-full border border-gray-300 rounded-md p-2 mb-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none"
+              value={managerSearch}
+              onChange={(e) => setManagerSearch(e.target.value)}
+            />
             <select
               required
               className="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
@@ -108,23 +121,34 @@ const ProjectModal = ({ isOpen, onClose, editProject }) => {
               onChange={(e) => setFormData({ ...formData, manager: e.target.value })}
             >
               <option value="">-- Select a Project Manager --</option>
-              {users.filter(u => u.role === 'Project Manager').map(u => (
-                <option key={u._id} value={u._id}>{u.name}</option>
-              ))}
+              {(users || [])
+                .filter(u => u.role === 'Project Manager' && u.name.toLowerCase().includes(managerSearch.toLowerCase()))
+                .map(u => (
+                  <option key={u._id} value={u._id}>{u.name}</option>
+                ))}
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Project Members (Hold Ctrl/Cmd to select multiple)</label>
+            <input 
+              type="text" 
+              placeholder="Search members by name..." 
+              className="w-full border border-gray-300 rounded-md p-2 mb-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none"
+              value={memberSearch}
+              onChange={(e) => setMemberSearch(e.target.value)}
+            />
             <select 
               multiple 
               className="w-full border border-gray-300 rounded-md p-2 h-24 focus:ring-blue-500 focus:border-blue-500 outline-none" 
               value={formData.members} 
               onChange={handleMemberSelect}
             >
-              {users.filter(u => u.role === 'User').map(u => (
-                <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
-              ))}
+              {(users || [])
+                .filter(u => u.role === 'User' && u.name.toLowerCase().includes(memberSearch.toLowerCase()))
+                .map(u => (
+                  <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
+                ))}
             </select>
           </div>
 
