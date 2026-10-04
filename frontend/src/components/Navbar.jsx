@@ -53,7 +53,11 @@ const Navbar = ({ onMenuToggle }) => {
       <div className="flex items-center gap-2 md:gap-4">
         {user && (
           <>
-            <div className="flex items-center text-gray-700 bg-gray-100 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm">
+            <div 
+              className="flex items-center text-gray-700 bg-gray-100 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm cursor-pointer hover:bg-gray-200 transition-colors"
+              title={`${user.name} (${user.role})`}
+              onClick={() => toast(`Logged in as ${user.name} (${user.role})`, { icon: '👤', position: 'top-center' })}
+            >
               <User className="h-4 w-4 md:mr-2" />
               <span className="font-medium mr-1 hidden sm:inline">{user.name}</span>
               <span className="text-gray-500 hidden sm:inline">({user.role})</span>
