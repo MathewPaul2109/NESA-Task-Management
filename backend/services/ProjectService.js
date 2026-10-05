@@ -1,5 +1,6 @@
 const ProjectRepository = require('../repositories/ProjectRepository');
 const TaskRepository = require('../repositories/TaskRepository');
+const UserRepository = require('../repositories/UserRepository');
 const logAction = require('../utils/logger');
 const sendEmail = require('../utils/sendEmail');
 
@@ -53,11 +54,38 @@ class ProjectService {
     // Merge task-based member counts into each project
     for (let p of result.projects) {
       const tasks = await TaskRepository.findTasksByProjectId(p._id);
-      const uniqueMembers = new Set(p.members.map(id => id.toString()));
+      
+      const memberMap = new Map();
+      // Add existing populated members
+      if (p.members && Array.isArray(p.members)) {
+        p.members.forEach(m => {
+          if (m && m._id) {
+            memberMap.set(m._id.toString(), m);
+          }
+        });
+      }
+      
+      // Collect new user IDs from tasks
+      const additionalUserIds = new Set();
       tasks.forEach(t => {
-        t.assignedTo.forEach(userId => uniqueMembers.add(userId.toString()));
+        if (t.assignedTo && Array.isArray(t.assignedTo)) {
+          t.assignedTo.forEach(userId => {
+            const idStr = userId.toString();
+            if (!memberMap.has(idStr)) {
+              additionalUserIds.add(idStr);
+            }
+          });
+        }
       });
-      p.members = Array.from(uniqueMembers);
+      
+      if (additionalUserIds.size > 0) {
+        const extraUsers = await UserRepository.findUsers({ _id: { $in: Array.from(additionalUserIds) } });
+        extraUsers.forEach(u => {
+          memberMap.set(u._id.toString(), { _id: u._id, name: u.name, email: u.email });
+        });
+      }
+      
+      p.members = Array.from(memberMap.values());
     }
 
     return result;
@@ -97,10 +125,11 @@ class ProjectService {
 
     if (populatedProject.manager && populatedProject.manager.email) {
       try {
+        const cleanDescription = description ? description.replace(/<[^>]*>?/gm, '') : '';
         await sendEmail({
           email: populatedProject.manager.email,
           subject: 'You have been assigned as Project Manager',
-          message: `You have been assigned as the Project Manager for the new project: ${title}\n\nDescription: ${description}`
+          message: `You have been assigned as the Project Manager for the new project: ${title}\n\nDescription: ${cleanDescription}`
         });
       } catch (err) {
         console.error('Error sending email to manager:', err);
@@ -111,10 +140,11 @@ class ProjectService {
       for (const member of populatedProject.members) {
         if (member.email) {
           try {
+            const cleanDescription = description ? description.replace(/<[^>]*>?/gm, '') : '';
             await sendEmail({
               email: member.email,
               subject: 'You have been added to a new Project',
-              message: `You have been added to the project: ${title}\n\nProject Manager: ${populatedProject.manager.name}\n\nDescription: ${description}`
+              message: `You have been added to the project: ${title}\n\nProject Manager: ${populatedProject.manager.name}\n\nDescription: ${cleanDescription}`
             });
           } catch (err) {
             console.error('Error sending email to member:', err);
@@ -137,7 +167,28 @@ class ProjectService {
     project.title = updateData.title || project.title;
     project.description = updateData.description || project.description;
     project.members = updateData.members || project.members;
-    project.status = updateData.status || project.status;
+    
+    if (updateData.status && updateData.status === 'Completed' && project.status !== 'Completed') {
+      const allProjectTasks = await TaskRepository.findTasksByProjectId(project._id);
+      if (allProjectTasks.length === 0) {
+        const err = new Error('Cannot complete a project that has no tasks');
+        err.statusCode = 400;
+        throw err;
+      }
+      const allDone = allProjectTasks.every(t => t.status === 'Done');
+      if (!allDone) {
+        const err = new Error('Cannot complete project: Not all tasks are done');
+        err.statusCode = 400;
+        throw err;
+      }
+      project.status = updateData.status;
+      project.isArchived = true;
+    } else if (updateData.status) {
+      project.status = updateData.status;
+      if (project.status !== 'Completed') {
+        project.isArchived = false;
+      }
+    }
     if (updateData.manager) project.manager = updateData.manager;
 
     const updatedProject = await ProjectRepository.updateProject(project);
@@ -178,6 +229,7 @@ class ProjectService {
     }
     await logAction('PROJECT_RESTORED', user._id, { title: project.title }, project._id);
     project.isArchived = false;
+    project.status = 'Active';
     await ProjectRepository.updateProject(project);
   }
 }

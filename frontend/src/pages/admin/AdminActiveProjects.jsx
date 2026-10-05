@@ -2,18 +2,21 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getProjects } from '../../features/projects/projectSlice';
 import { getTasks } from '../../features/tasks/taskSlice';
-import { FolderGit2, Users, MessageSquare } from 'lucide-react';
+import { FolderGit2, Users, MessageSquare, Search, Edit } from 'lucide-react';
 import ProjectChatDrawer from '../../components/ProjectChatDrawer';
-import ProjectTasksModal from './ProjectTasksModal';
+import ProjectTasksModal from '../user/ProjectTasksModal'; // We can use the same tasks modal
+import ProjectModal from './ProjectModal';
 import Pagination from '../../components/Pagination';
 import toast from 'react-hot-toast';
 
-const UserProjects = () => {
+const AdminActiveProjects = () => {
   const dispatch = useDispatch();
   const { items: projects, isLoading: isProjectsLoading, totalPages } = useSelector((state) => state.projects);
   const { items: tasks } = useSelector((state) => state.tasks || { items: [] });
   const [activeChatProject, setActiveChatProject] = React.useState(null);
   const [activeTasksProject, setActiveTasksProject] = React.useState(null);
+  const [isProjectModalOpen, setIsProjectModalOpen] = React.useState(false);
+  const [projectToEdit, setProjectToEdit] = React.useState(null);
 
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 6;
@@ -32,7 +35,8 @@ const UserProjects = () => {
   }, [searchInput]);
 
   useEffect(() => {
-    dispatch(getProjects({ page: currentPage, limit: itemsPerPage, search: debouncedSearch }));
+    // We explicitly request ONLY 'Active' status projects
+    dispatch(getProjects({ status: 'Active', search: debouncedSearch, page: currentPage, limit: itemsPerPage }));
     // TODO: Revert limit or implement backend progress calculation if tasks per project exceed 10
     dispatch(getTasks({ limit: 10 })); // Fetch enough tasks to calculate progress for all shown projects
   }, [dispatch, currentPage, debouncedSearch]);
@@ -40,12 +44,13 @@ const UserProjects = () => {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h2 className="text-2xl font-bold text-gray-800">My Projects</h2>
+        <h2 className="text-2xl font-bold text-gray-800">Active Projects</h2>
         <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input 
             type="text" 
-            placeholder="Search projects..." 
-            className="pl-4 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 outline-none w-full"
+            placeholder="Search active projects..." 
+            className="pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 outline-none w-full"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
           />
@@ -53,9 +58,9 @@ const UserProjects = () => {
       </div>
 
       {isProjectsLoading ? (
-        <div className="text-center text-gray-500">Loading projects...</div>
+        <div className="text-center text-gray-500">Loading active projects...</div>
       ) : !projects || projects.length === 0 ? (
-        <div className="text-center text-gray-500 mt-10">You are not assigned to any projects yet.</div>
+        <div className="text-center text-gray-500 mt-10">No active projects found.</div>
       ) : (
         <div className="flex-1 overflow-y-auto pr-2 pb-6 flex flex-col">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
@@ -85,7 +90,9 @@ const UserProjects = () => {
                   {project.status}
                 </span>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-1">{project.title}</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-1" title={project.title}>
+                {project.title.length > 15 ? project.title.substring(0, 15) + '...' : project.title}
+              </h3>
               <div
                 className="text-sm text-gray-500 line-clamp-3 mb-4 flex-1 prose prose-sm max-w-none"
                 dangerouslySetInnerHTML={{ __html: project.description }}
@@ -126,13 +133,26 @@ const UserProjects = () => {
                 >
                   <span className="font-medium underline decoration-dashed underline-offset-4">{project.members?.length || 0} Team Members</span>
                 </button>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setActiveChatProject(project); }}
-                  className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition font-medium"
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  Chat
-                </button>
+                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setActiveChatProject(project); }}
+                    className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition font-medium"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    Chat
+                  </button>
+                  <button 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      setProjectToEdit(project);
+                      setIsProjectModalOpen(true);
+                    }}
+                    className="flex items-center gap-1 text-gray-500 hover:text-blue-600 transition font-medium"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit
+                  </button>
+                </div>
               </div>
             </div>
             );
@@ -158,8 +178,16 @@ const UserProjects = () => {
         onClose={() => setActiveTasksProject(null)} 
         project={activeTasksProject} 
       />
+      <ProjectModal 
+        isOpen={isProjectModalOpen}
+        onClose={() => {
+          setIsProjectModalOpen(false);
+          setProjectToEdit(null);
+        }}
+        editProject={projectToEdit}
+      />
     </div>
   );
 };
 
-export default UserProjects;
+export default AdminActiveProjects;

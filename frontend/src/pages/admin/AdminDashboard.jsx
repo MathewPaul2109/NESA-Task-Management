@@ -10,6 +10,11 @@ import TaskModal from '../user/TaskModal';
 import Pagination from '../../components/Pagination';
 import toast from 'react-hot-toast';
 
+const truncateText = (text, maxLength) => {
+  if (!text) return '';
+  return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+};
+
 const AdminDashboard = () => {
   const dispatch = useDispatch();
   const { items: projects, totalPages: projectTotalPages, isLoading: isProjectsLoading } = useSelector((state) => state.projects);
@@ -32,29 +37,32 @@ const AdminDashboard = () => {
   const taskItemsPerPage = 5;
 
   const [taskSearchQuery, setTaskSearchQuery] = useState('');
+  const [debouncedProjectSearch, setDebouncedProjectSearch] = useState('');
   const [debouncedTaskSearch, setDebouncedTaskSearch] = useState('');
 
   useEffect(() => {
-    // Add debouncing for project search
     const timer = setTimeout(() => {
       if (searchQuery.length >= 3 || searchQuery.length === 0) {
-        dispatch(getProjects({ search: searchQuery, status: statusFilter, page: currentProjectPage, limit: projectItemsPerPage }));
+        setDebouncedProjectSearch(searchQuery);
+        setCurrentProjectPage(1);
       }
     }, 3000);
     return () => clearTimeout(timer);
-  }, [dispatch, searchQuery, statusFilter, currentProjectPage]);
+  }, [searchQuery]);
 
   useEffect(() => {
-    // Add debouncing for task search
+    dispatch(getProjects({ search: debouncedProjectSearch, status: statusFilter, page: currentProjectPage, limit: projectItemsPerPage }));
+  }, [dispatch, debouncedProjectSearch, statusFilter, currentProjectPage]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       if (taskSearchQuery.length >= 3 || taskSearchQuery.length === 0) {
         setDebouncedTaskSearch(taskSearchQuery);
-        dispatch(getTasks({ page: currentTaskPage, limit: taskItemsPerPage, search: taskSearchQuery }));
         setCurrentTaskPage(1);
       }
     }, 3000);
     return () => clearTimeout(timer);
-  }, [dispatch, taskSearchQuery]);
+  }, [taskSearchQuery]);
 
   useEffect(() => {
     dispatch(getTasks({ page: currentTaskPage, limit: taskItemsPerPage }));
@@ -88,6 +96,11 @@ const AdminDashboard = () => {
 
   const completedTasks = tasks
     .filter(t => t.status === 'Done')
+    .filter(t => t.title.toLowerCase().includes(debouncedTaskSearch.toLowerCase()))
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+  const reviewTasks = tasks
+    .filter(t => t.status === 'Review')
     .filter(t => t.title.toLowerCase().includes(debouncedTaskSearch.toLowerCase()))
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
@@ -183,7 +196,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-8">
 
         {/* ── Recent Projects ─────────────────────────────────────────────── */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden h-full">
@@ -212,16 +225,16 @@ const AdminDashboard = () => {
               </select>
             </div>
           </div>
-          <div className="overflow-scroll max-h-[400px] md:max-h-none md:flex-1 min-h-[300px]">
-            <table className="w-full text-left border-collapse text-sm">
+          <div className="overflow-auto max-h-[400px] md:max-h-[500px] min-h-[300px] w-full">
+            <table className="w-full min-w-[1000px] text-left border-collapse text-sm table-fixed">
               <thead>
                 <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
-                  <th className="p-4 font-medium">Project Name</th>
-                  <th className="p-4 font-medium">Manager</th>
-                  <th className="p-4 font-medium">Status</th>
-                  <th className="p-4 font-medium">Members</th>
-                  <th className="p-4 font-medium">Progress</th>
-                  <th className="p-4 font-medium text-right">Actions</th>
+                  <th className="p-4 font-medium w-[25%]">Project Name</th>
+                  <th className="p-4 font-medium w-[15%]">Manager</th>
+                  <th className="p-4 font-medium w-[10%]">Status</th>
+                  <th className="p-4 font-medium w-[10%]">Members</th>
+                  <th className="p-4 font-medium w-[15%]">Progress</th>
+                  <th className="p-4 font-medium text-right w-[25%]">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -246,11 +259,20 @@ const AdminDashboard = () => {
                       );
                       return (
                         <tr key={project._id} className="border-b border-gray-50 hover:bg-gray-50">
-                          <td className="p-4 font-medium text-gray-800">{project.title}</td>
-                          <td className="p-4 text-gray-600">{project.manager?.name || 'Unassigned'}</td>
+                          <td className="p-4">
+                            <div className="font-medium text-gray-800 truncate cursor-help" title={project.title}>
+                              {project.title}
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <div className="text-gray-600 break-words line-clamp-2 cursor-help" title={project.manager?.name || 'Unassigned'}>
+                              {project.manager?.name || 'Unassigned'}
+                            </div>
+                          </td>
                           <td className="p-4">
                             <span className={`px-2 py-1 rounded-full text-xs ${
                               project.status === 'Completed' ? 'bg-green-100 text-green-700' :
+                              project.status === 'In Progress' ? 'bg-purple-100 text-purple-700' :
                               project.status === 'On Hold'  ? 'bg-amber-100 text-amber-700' :
                               'bg-blue-100 text-blue-700'
                             }`}>
@@ -267,6 +289,7 @@ const AdminDashboard = () => {
                                 <div
                                   className={`h-1.5 rounded-full transition-all duration-500 ${
                                     project.status === 'Completed' ? 'bg-green-500' :
+                                    project.status === 'In Progress' ? 'bg-purple-500' :
                                     project.status === 'On Hold'  ? 'bg-amber-500' :
                                     'bg-blue-500'
                                   }`}
@@ -415,6 +438,7 @@ const AdminDashboard = () => {
                           <div className="flex items-center gap-2 min-w-0">
                             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
                               project.status === 'Completed' ? 'bg-green-500' :
+                              project.status === 'In Progress' ? 'bg-purple-500' :
                               project.status === 'On Hold'  ? 'bg-amber-400' : 'bg-blue-500'
                             }`} />
                             <span className="text-sm font-medium text-gray-700 truncate">{project.title}</span>
@@ -440,6 +464,43 @@ const AdminDashboard = () => {
                   })()}
                 </div>
               </div>
+
+              {/* Tasks in Review */}
+              {reviewTasks.length > 0 && (
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Eye className="h-4 w-4 text-amber-500" />
+                      <span className="text-sm font-medium text-gray-600">
+                        Tasks in Review
+                        <span className="text-gray-400 font-normal ml-1">({reviewTasks.length})</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    {reviewTasks.map(task => (
+                      <div
+                        key={task._id}
+                        className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-50 border border-gray-100 cursor-pointer transition-colors group"
+                        onClick={() => { setSelectedCompletedTask(task); setIsCompletedTaskModalOpen(true); }}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Eye className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-700 truncate">{task.title}</p>
+                            <p className="text-xs text-gray-400">
+                              {task.project?.title || 'Unknown Project'} · {new Date(task.updatedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-xs font-medium text-amber-600 opacity-0 group-hover:opacity-100 transition">
+                          Review &gt;
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Completed tasks — compact archive list */}
               {completedTasks.length > 0 && (

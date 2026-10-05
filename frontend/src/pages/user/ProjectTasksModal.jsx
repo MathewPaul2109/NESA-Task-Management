@@ -1,9 +1,11 @@
 import React from 'react';
 import { X, Clock, User as UserIcon } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import TaskModal from './TaskModal';
 
 const ProjectTasksModal = ({ isOpen, onClose, project }) => {
   const { items: tasks } = useSelector((state) => state.tasks || { items: [] });
+  const [selectedTask, setSelectedTask] = React.useState(null);
   
   if (!isOpen || !project) return null;
 
@@ -17,10 +19,9 @@ const ProjectTasksModal = ({ isOpen, onClose, project }) => {
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-100">
-          <div>
-            <h2 className="text-xl font-bold text-gray-800">{project.title} - Pending Tasks</h2>
-            <p className="text-sm text-gray-500 mt-1">Tasks left to do and their assignees</p>
+        <div className="flex justify-between items-start p-6 border-b border-gray-100">
+          <div className="min-w-0 flex-1 pr-4">
+            <h2 className="text-xl font-bold text-gray-800 break-words">{project.title}</h2>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X className="h-5 w-5" />
@@ -28,6 +29,17 @@ const ProjectTasksModal = ({ isOpen, onClose, project }) => {
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+          {project.description && (
+            <div className="mb-6">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">Project Description</h3>
+              <div 
+                className="prose prose-sm max-w-none text-gray-600 break-words overflow-hidden w-full"
+                dangerouslySetInnerHTML={{ __html: project.description }}
+              />
+            </div>
+          )}
+          
+          <h3 className="text-lg font-bold text-gray-800 mb-4">Pending Tasks</h3>
           {pendingTasks.length === 0 ? (
             <div className="text-center text-gray-500 py-8">
               All tasks are completed for this project! 🎉
@@ -35,9 +47,13 @@ const ProjectTasksModal = ({ isOpen, onClose, project }) => {
           ) : (
             <div className="space-y-4">
               {pendingTasks.map(task => (
-                <div key={task._id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold text-gray-800">{task.title}</h3>
+                <div 
+                  key={task._id} 
+                  className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:shadow-md hover:border-blue-300 transition"
+                  onClick={() => setSelectedTask(task)}
+                >
+                  <div className="flex justify-between items-start mb-2 gap-4">
+                    <h3 className="font-semibold text-gray-800 break-words min-w-0 flex-1">{task.title}</h3>
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                       task.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
                       task.status === 'Review' ? 'bg-purple-100 text-purple-700' :
@@ -46,7 +62,7 @@ const ProjectTasksModal = ({ isOpen, onClose, project }) => {
                       {task.status}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 mb-4">{task.description?.replace(/<[^>]*>?/gm, '')}</p>
+                  <p className="text-sm text-gray-600 mb-4 break-words">{task.description?.replace(/<[^>]*>?/gm, '')}</p>
                   
                   <div className="flex justify-between items-center text-xs text-gray-500 border-t border-gray-50 pt-3">
                     <div className="flex items-center gap-2">
@@ -76,6 +92,11 @@ const ProjectTasksModal = ({ isOpen, onClose, project }) => {
           )}
         </div>
       </div>
+      <TaskModal 
+        isOpen={!!selectedTask}
+        onClose={() => setSelectedTask(null)}
+        task={selectedTask}
+      />
     </div>
   );
 };

@@ -5,12 +5,11 @@ import api from '../../services/api';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import RichTextEditor from '../../components/RichTextEditor';
+import Select from 'react-select';
 
 const ProjectModal = ({ isOpen, onClose, editProject }) => {
   const dispatch = useDispatch();
   const [users, setUsers] = useState([]);
-  const [managerSearch, setManagerSearch] = useState('');
-  const [memberSearch, setMemberSearch] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -32,8 +31,6 @@ const ProjectModal = ({ isOpen, onClose, editProject }) => {
     };
     if (isOpen) {
       fetchUsers();
-      setManagerSearch('');
-      setMemberSearch('');
       if (editProject) {
         setFormData({
           title: editProject.title,
@@ -52,6 +49,14 @@ const ProjectModal = ({ isOpen, onClose, editProject }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Strip HTML to count actual characters for description
+    const plainDesc = formData.description ? formData.description.replace(/<[^>]*>?/gm, '') : '';
+    const wordCount = plainDesc.trim().split(/\s+/).filter(word => word.length > 0).length;
+    if (wordCount > 100) {
+      return toast.error('Description must not exceed 100 words.');
+    }
+
     if (editProject) {
       dispatch(updateProject({ id: editProject._id, projectData: formData }));
       toast.success('Project updated successfully!');
@@ -90,6 +95,7 @@ const ProjectModal = ({ isOpen, onClose, editProject }) => {
             <input 
               required
               type="text" 
+              maxLength={20}
               className="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
               value={formData.title}
               onChange={(e) => setFormData({...formData, title: e.target.value})}
@@ -107,49 +113,45 @@ const ProjectModal = ({ isOpen, onClose, editProject }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Assign Project Manager</label>
-            <input 
-              type="text" 
-              placeholder="Search managers..." 
-              className="w-full border border-gray-300 rounded-md p-2 mb-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none"
-              value={managerSearch}
-              onChange={(e) => setManagerSearch(e.target.value)}
+            <Select
+              options={(users || []).filter(u => u.role === 'Project Manager').map(u => ({ value: u._id, label: u.name }))}
+              value={formData.manager ? { value: formData.manager, label: (users || []).find(u => u._id === formData.manager)?.name || '' } : null}
+              onChange={(selected) => setFormData({ ...formData, manager: selected ? selected.value : '' })}
+              placeholder="Search managers..."
+              isClearable
+              className="text-sm"
+              styles={{
+                control: (base) => ({
+                  ...base,
+                  borderColor: '#d1d5db',
+                  '&:hover': { borderColor: '#9ca3af' },
+                  boxShadow: 'none',
+                }),
+              }}
             />
-            <select
-              required
-              className="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              value={formData.manager}
-              onChange={(e) => setFormData({ ...formData, manager: e.target.value })}
-            >
-              <option value="">-- Select a Project Manager --</option>
-              {(users || [])
-                .filter(u => u.role === 'Project Manager' && u.name.toLowerCase().includes(managerSearch.toLowerCase()))
-                .map(u => (
-                  <option key={u._id} value={u._id}>{u.name}</option>
-                ))}
-            </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Project Members (Hold Ctrl/Cmd to select multiple)</label>
-            <input 
-              type="text" 
-              placeholder="Search members by name..." 
-              className="w-full border border-gray-300 rounded-md p-2 mb-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none"
-              value={memberSearch}
-              onChange={(e) => setMemberSearch(e.target.value)}
+            <label className="block text-sm font-medium text-gray-700 mb-1">Project Members</label>
+            <Select
+              isMulti
+              options={(users || []).filter(u => u.role === 'User').map(u => ({ value: u._id, label: `${u.name} (${u.role})` }))}
+              value={formData.members.map(id => {
+                const u = (users || []).find(user => user._id === id);
+                return u ? { value: id, label: `${u.name} (${u.role})` } : { value: id, label: id };
+              })}
+              onChange={(selected) => setFormData({ ...formData, members: selected ? selected.map(s => s.value) : [] })}
+              placeholder="Search members by name..."
+              className="text-sm"
+              styles={{
+                control: (base) => ({
+                  ...base,
+                  borderColor: '#d1d5db',
+                  '&:hover': { borderColor: '#9ca3af' },
+                  boxShadow: 'none',
+                }),
+              }}
             />
-            <select 
-              multiple 
-              className="w-full border border-gray-300 rounded-md p-2 h-24 focus:ring-blue-500 focus:border-blue-500 outline-none" 
-              value={formData.members} 
-              onChange={handleMemberSelect}
-            >
-              {(users || [])
-                .filter(u => u.role === 'User' && u.name.toLowerCase().includes(memberSearch.toLowerCase()))
-                .map(u => (
-                  <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
-                ))}
-            </select>
           </div>
 
           <div>
@@ -160,8 +162,9 @@ const ProjectModal = ({ isOpen, onClose, editProject }) => {
               onChange={(e) => setFormData({...formData, status: e.target.value})}
             >
               <option value="Active">Active</option>
+              <option value="In Progress">In Progress</option>
               <option value="On Hold">On Hold</option>
-              <option value="Completed">Completed</option>
+              {editProject && <option value="Completed">Completed</option>}
             </select>
           </div>
 

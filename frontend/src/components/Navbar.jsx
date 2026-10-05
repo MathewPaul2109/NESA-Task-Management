@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout, reset } from '../features/auth/authSlice';
@@ -10,31 +10,17 @@ const Navbar = ({ onMenuToggle }) => {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
 
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
   const onLogout = () => {
-    toast((t) => (
-      <div>
-        <p className="mb-3 font-medium text-gray-800">Are you sure you want to log out?</p>
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={() => toast.dismiss(t.id)}
-            className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => {
-              toast.dismiss(t.id);
-              dispatch(logout());
-              dispatch(reset());
-              navigate('/login');
-            }}
-            className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors"
-          >
-            Log out
-          </button>
-        </div>
-      </div>
-    ), { duration: 5000, position: 'top-center' });
+    setIsLogoutModalOpen(true);
+  };
+
+  const handleConfirmLogout = () => {
+    setIsLogoutModalOpen(false);
+    dispatch(logout());
+    dispatch(reset());
+    navigate('/login');
   };
 
   return (
@@ -71,6 +57,36 @@ const Navbar = ({ onMenuToggle }) => {
           </>
         )}
       </div>
+
+      {isLogoutModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 transform transition-all scale-100 opacity-100">
+            <div className="mb-6 flex flex-col items-center text-center">
+              <div className="bg-red-100 text-red-600 p-3 rounded-full mb-4">
+                <LogOut className="h-6 w-6" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Ready to Leave?</h3>
+              <p className="text-sm text-gray-500">
+                Are you sure you want to log out of your account? You will need to log back in to access your tasks.
+              </p>
+            </div>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setIsLogoutModalOpen(false)}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmLogout}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition-colors"
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };

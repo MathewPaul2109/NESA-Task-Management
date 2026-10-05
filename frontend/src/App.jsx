@@ -11,6 +11,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminLogs from './pages/admin/AdminLogs';
 import AdminArchive from './pages/admin/AdminArchive';
+import AdminActiveProjects from './pages/admin/AdminActiveProjects';
 import UserDashboard from './pages/user/UserDashboard';
 import MyTasks from './pages/user/MyTasks';
 import UserProjects from './pages/user/UserProjects';
@@ -30,6 +31,7 @@ function App() {
         <Route element={<PrivateRoute allowedRoles={['Admin', 'Project Manager']} />}>
           <Route element={<Layout />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/active-projects" element={<AdminActiveProjects />} />
             <Route path="/admin/archive" element={<AdminArchive />} />
           </Route>
         </Route>

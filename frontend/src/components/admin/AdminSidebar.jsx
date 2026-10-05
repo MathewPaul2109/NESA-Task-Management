@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Settings, Activity, Archive, FolderGit2 } from 'lucide-react';
+import { LayoutDashboard, Users, Activity, Archive, FolderGit2 } from 'lucide-react';
 import { useSelector } from 'react-redux';
 
 const AdminSidebar = () => {
@@ -15,6 +15,10 @@ const AdminSidebar = () => {
         <NavLink to="/admin/dashboard" className={({isActive}) => `flex items-center gap-3 px-3 py-2 rounded-md transition ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
           <LayoutDashboard className="h-5 w-5" />
           <span className="font-medium">Dashboard</span>
+        </NavLink>
+        <NavLink to="/admin/active-projects" className={({isActive}) => `flex items-center gap-3 px-3 py-2 rounded-md transition ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+          <FolderGit2 className="h-5 w-5" />
+          <span className="font-medium">Active Projects</span>
         </NavLink>
         {user?.role === 'Project Manager' && (
           <NavLink to="/user/projects" className={({isActive}) => `flex items-center gap-3 px-3 py-2 rounded-md transition ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
@@ -39,12 +43,6 @@ const AdminSidebar = () => {
           <span className="font-medium">Archive</span>
         </NavLink>
       </nav>
-      <div className="p-4 border-t border-gray-100">
-        <a href="#settings" className="flex items-center gap-3 px-3 py-2 text-gray-500 hover:text-gray-800 transition">
-          <Settings className="h-5 w-5" />
-          <span className="font-medium">Settings</span>
-        </a>
-      </div>
     </aside>
   );
 };
