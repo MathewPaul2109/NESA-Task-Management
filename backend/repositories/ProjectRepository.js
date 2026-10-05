@@ -17,7 +17,7 @@ class ProjectRepository {
   async findProjectsPaginated(query, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
     const [projects, total] = await Promise.all([
-      Project.find(query).populate('manager', 'name email').sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      Project.find(query).populate('manager', 'name email').populate('members', 'name email').sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
       Project.countDocuments(query),
     ]);
     return { projects, total, totalPages: Math.ceil(total / limit), currentPage: page };

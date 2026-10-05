@@ -86,9 +86,9 @@ const TaskModal = ({ isOpen, onClose, task }) => {
         
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-100">
-          <div>
-            <h2 className="text-xl font-bold text-gray-800">{task.title}</h2>
-            <p className="text-sm text-gray-500 mt-1">{task.project?.title}</p>
+          <div className="flex-1 min-w-0 pr-4">
+            <h2 className="text-xl font-bold text-gray-800 break-words">{task.title}</h2>
+            <p className="text-sm text-gray-500 mt-1 break-words">{task.project?.title}</p>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X className="h-5 w-5" />

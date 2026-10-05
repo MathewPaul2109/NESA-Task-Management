@@ -143,7 +143,7 @@ const DraggableCard = ({ task, onOpen, getDueDateStatus, dispatch }) => {
 const OverlayCard = ({ task }) => (
   <div className="bg-white p-4 rounded shadow-xl border border-blue-300 border-l-4 border-l-blue-400 w-72 rotate-2 opacity-95 cursor-grabbing">
     <h4 className="font-medium text-gray-900 mb-1">{task.title}</h4>
-    <p className="text-sm text-gray-500 line-clamp-2">{task.description?.replace(/<[^>]*>?/gm, '')}</p>
+    <p className="text-sm text-gray-500 line-clamp-2 break-words">{task.description?.replace(/<[^>]*>?/gm, '')}</p>
     <span className={`mt-2 inline-block px-2 py-1 rounded-full text-xs ${
       task.priority === 'High'   ? 'bg-red-100 text-red-700' :
       task.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
@@ -194,7 +194,7 @@ const UserDashboard = () => {
   const socketRef = useRef(null);
 
   useEffect(() => {
-    dispatch(getTasks({ page: 1, limit: 1000 }));
+    dispatch(getTasks({ page: 1, limit: 1000, assignedTo: 'me', search: debouncedSearch }));
 
     // Guard against StrictMode / fast-refresh double-registration
     if (socketRef.current) return;
@@ -202,8 +202,8 @@ const UserDashboard = () => {
     const socket = io('http://localhost:5000');
     socketRef.current = socket;
 
-    socket.on('task_updated', () => dispatch(getTasks({ page: 1, limit: 1000 })));
-    socket.on('task_created', () => dispatch(getTasks({ page: 1, limit: 1000 })));
+    socket.on('task_updated', () => dispatch(getTasks({ page: 1, limit: 1000, assignedTo: 'me', search: debouncedSearch })));
+    socket.on('task_created', () => dispatch(getTasks({ page: 1, limit: 1000, assignedTo: 'me', search: debouncedSearch })));
     socket.on('new_comment', (comment) => {
       dispatch(appendComment(comment));
       if (comment.author?._id !== user?._id) {
@@ -215,15 +215,9 @@ const UserDashboard = () => {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [dispatch, user?._id]);
+  }, [dispatch, user?._id, debouncedSearch]);
 
-  const myTasks = Array.isArray(tasks) && tasks.length > 0 
-    ? tasks.filter(t =>
-        t && t.assignedTo && t.assignedTo.some(a => a._id === user?._id || a === user?._id)
-      ).filter(t => 
-        t && t.title && (t.title.toLowerCase().includes(debouncedSearch.toLowerCase()) || (t.description || '').toLowerCase().includes(debouncedSearch.toLowerCase()))
-      )
-    : [];
+  const myTasks = Array.isArray(tasks) ? tasks : [];
 
   const columns = Object.fromEntries(
     COLUMNS.map(status => [status, myTasks.filter(t => t.status === status)])

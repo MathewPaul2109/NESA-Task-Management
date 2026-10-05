@@ -5,7 +5,7 @@ const logAction = require('../utils/logger');
 const sendEmail = require('../utils/sendEmail');
 
 class TaskService {
-  async getTasksForUser(user, projectId, page = 1, limit = 10, search = '') {
+  async getTasksForUser(user, projectId, page = 1, limit = 10, search = '', extraFilters = {}) {
     let query = {};
 
     if (projectId) {
@@ -47,6 +47,31 @@ class TaskService {
       }
     }
 
+    let filterConditions = [];
+    if (extraFilters.status) {
+      filterConditions.push({ status: extraFilters.status });
+    }
+    if (extraFilters.excludeStatus) {
+      filterConditions.push({ status: { $ne: extraFilters.excludeStatus } });
+    }
+    if (extraFilters.assignedTo) {
+      if (extraFilters.assignedTo === 'me') {
+        filterConditions.push({ assignedTo: user._id });
+      } else {
+        filterConditions.push({ assignedTo: extraFilters.assignedTo });
+      }
+    }
+
+    if (filterConditions.length > 0) {
+      if (query.$and) {
+        query.$and.push(...filterConditions);
+      } else if (Object.keys(query).length > 0) {
+        query = { $and: [query, ...filterConditions] };
+      } else {
+        query = { $and: filterConditions };
+      }
+    }
+
     return await TaskRepository.findTasksPaginated(query, page, limit);
   }
 
@@ -76,7 +101,8 @@ class TaskService {
       for (const assigneeId of assignedTo) {
         const assignee = await UserRepository.findById(assigneeId);
         if (assignee && assignee.email) {
-          const message = `You have been assigned a new task: ${title}\n\nDescription: ${description}`;
+          const cleanDescription = description ? description.replace(/<[^>]*>?/gm, '') : '';
+          const message = `You have been assigned a new task: ${title}\n\nDescription: ${cleanDescription}`;
           try {
             await sendEmail({
               email: assignee.email,
@@ -121,6 +147,35 @@ class TaskService {
     const updatedTask = await TaskRepository.updateTask(task);
     await logAction('TASK_UPDATED', user._id, { status: updatedTask.status, title: updatedTask.title }, updatedTask._id);
     io.emit('task_updated', updatedTask);
+
+    if (updatedTask.project) {
+      const allProjectTasks = await TaskRepository.findTasksByProjectId(updatedTask.project);
+      if (allProjectTasks.length > 0) {
+        const allDone = allProjectTasks.every(t => t.status === 'Done');
+        const project = await ProjectRepository.findProjectById(updatedTask.project);
+        if (project) {
+          let projectStatusChanged = false;
+          if (allDone && project.status !== 'Completed') {
+            project.status = 'Completed';
+            project.isArchived = true;
+            await ProjectRepository.updateProject(project);
+            await logAction('PROJECT_COMPLETED_AUTO', user._id, { title: project.title }, project._id);
+            projectStatusChanged = true;
+          } else if (!allDone && project.status === 'Completed') {
+            project.status = 'Active';
+            project.isArchived = false;
+            await ProjectRepository.updateProject(project);
+            await logAction('PROJECT_UNCOMPLETED_AUTO', user._id, { title: project.title }, project._id);
+            projectStatusChanged = true;
+          }
+          
+          if (projectStatusChanged && io) {
+            const populatedProject = await ProjectRepository.findProjectById(project._id);
+            io.emit('project_updated', populatedProject);
+          }
+        }
+      }
+    }
 
     return updatedTask;
   }

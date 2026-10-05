@@ -5,13 +5,12 @@ import api from '../../services/api';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import RichTextEditor from '../../components/RichTextEditor';
+import Select from 'react-select';
 
 const AdminTaskModal = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
   const { items: projects } = useSelector((state) => state.projects);
   const [users, setUsers] = useState([]);
-  const [projectSearch, setProjectSearch] = useState('');
-  const [userSearch, setUserSearch] = useState('');
   
   const [formData, setFormData] = useState({
     title: '',
@@ -44,6 +43,11 @@ const AdminTaskModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const plainDesc = formData.description ? formData.description.replace(/<[^>]*>?/gm, '') : '';
+    const wordCount = plainDesc.trim().split(/\s+/).filter(word => word.length > 0).length;
+    if (wordCount > 100) {
+      return toast.error('Description must not exceed 100 words.');
+    }
     if (formData.assignedTo.length === 0) {
       toast.error('Please select at least one user');
       return;
@@ -78,7 +82,7 @@ const AdminTaskModal = ({ isOpen, onClose }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Task Title</label>
-            <input required type="text" className="w-full border rounded-md p-2" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+            <input required type="text" maxLength={20} className="w-full border rounded-md p-2" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} />
           </div>
           
           <div>
@@ -92,44 +96,45 @@ const AdminTaskModal = ({ isOpen, onClose }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Project</label>
-            <input 
-              type="text" 
-              placeholder="Search projects..." 
-              className="w-full border rounded-md p-2 mb-2 text-sm"
-              value={projectSearch}
-              onChange={(e) => setProjectSearch(e.target.value)}
+            <Select
+              options={(projects || []).map(p => ({ value: p._id, label: p.title }))}
+              value={formData.project ? { value: formData.project, label: (projects || []).find(p => p._id === formData.project)?.title || '' } : null}
+              onChange={(selected) => setFormData({ ...formData, project: selected ? selected.value : '' })}
+              placeholder="Search projects..."
+              isClearable
+              className="text-sm"
+              styles={{
+                control: (base) => ({
+                  ...base,
+                  borderColor: '#e5e7eb',
+                  '&:hover': { borderColor: '#d1d5db' },
+                  boxShadow: 'none',
+                }),
+              }}
             />
-            <select required className="w-full border rounded-md p-2" value={formData.project} onChange={(e) => setFormData({...formData, project: e.target.value})}>
-              <option value="">Select Project</option>
-              {(projects || [])
-                .filter(p => p.title.toLowerCase().includes(projectSearch.toLowerCase()))
-                .map(p => (
-                  <option key={p._id} value={p._id}>{p.title}</option>
-                ))}
-            </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Assignees (Hold Ctrl/Cmd to select multiple)</label>
-            <input 
-              type="text" 
-              placeholder="Search users by name..." 
-              className="w-full border rounded-md p-2 mb-2 text-sm"
-              value={userSearch}
-              onChange={(e) => setUserSearch(e.target.value)}
+            <label className="block text-sm font-medium text-gray-700 mb-1">Assignees</label>
+            <Select
+              isMulti
+              options={(users || []).filter(u => u.role === 'User').map(u => ({ value: u._id, label: `${u.name} (${u.role})` }))}
+              value={formData.assignedTo.map(id => {
+                const u = (users || []).find(user => user._id === id);
+                return u ? { value: id, label: `${u.name} (${u.role})` } : { value: id, label: id };
+              })}
+              onChange={(selected) => setFormData({ ...formData, assignedTo: selected ? selected.map(s => s.value) : [] })}
+              placeholder="Search users by name..."
+              className="text-sm"
+              styles={{
+                control: (base) => ({
+                  ...base,
+                  borderColor: '#e5e7eb',
+                  '&:hover': { borderColor: '#d1d5db' },
+                  boxShadow: 'none',
+                }),
+              }}
             />
-            <select 
-              multiple 
-              className="w-full border rounded-md p-2 h-24" 
-              value={formData.assignedTo} 
-              onChange={handleUserSelect}
-            >
-              {(users || [])
-                .filter(u => u.role === 'User' && u.name.toLowerCase().includes(userSearch.toLowerCase()))
-                .map(u => (
-                  <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
-                ))}
-            </select>
           </div>
 
           <div className="flex gap-4">

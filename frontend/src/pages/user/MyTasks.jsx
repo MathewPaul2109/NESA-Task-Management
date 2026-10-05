@@ -8,7 +8,7 @@ import Pagination from '../../components/Pagination';
 
 const MyTasks = () => {
   const dispatch = useDispatch();
-  const { items: tasks, isLoading } = useSelector((state) => state.tasks);
+  const { items: tasks, isLoading, totalPages } = useSelector((state) => state.tasks);
   const { user } = useSelector((state) => state.auth);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -18,22 +18,17 @@ const MyTasks = () => {
   const [statusFilter, setStatusFilter] = useState('');
 
   useEffect(() => {
-    dispatch(getTasks({ page: 1, limit: 1000 }));
-  }, [dispatch]);
+    dispatch(getTasks({ 
+      page: currentPage, 
+      limit: itemsPerPage, 
+      search: searchInput, 
+      status: statusFilter, 
+      assignedTo: 'me', 
+      excludeStatus: 'Done' 
+    }));
+  }, [dispatch, currentPage, searchInput, statusFilter]);
 
-  const myTasks = (tasks || [])
-    .filter(t =>
-      t && t.assignedTo && t.assignedTo.some(a => a._id === user?._id || a === user?._id)
-    )
-    .filter(t => t.status !== 'Done') // Filter out done tasks by default
-    .filter(t =>
-      t.title.toLowerCase().includes(searchInput.toLowerCase()) ||
-      (t.description || '').toLowerCase().includes(searchInput.toLowerCase())
-    )
-    .filter(t => (statusFilter ? t.status === statusFilter : true))
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-  const paginatedTasks = myTasks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const myTasks = [...(tasks || [])].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   const getDueDateStatus = (dueDate, status) => {
     if (!dueDate || status === 'Done') return null;
@@ -129,7 +124,7 @@ const MyTasks = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {paginatedTasks.map(task => {
+                    {myTasks.map(task => {
                       const dueDateStatus = getDueDateStatus(task.dueDate, task.status);
                       return (
                         <tr
@@ -179,12 +174,11 @@ const MyTasks = () => {
             </div>
           </div>
 
-          {/* Pagination */}
-          {myTasks.length > itemsPerPage && (
+          {totalPages > 1 && (
             <div className="mt-4">
               <Pagination
                 currentPage={currentPage}
-                totalPages={Math.ceil(myTasks.length / itemsPerPage)}
+                totalPages={totalPages}
                 onPageChange={setCurrentPage}
               />
             </div>

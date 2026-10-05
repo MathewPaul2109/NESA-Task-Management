@@ -183,7 +183,10 @@ const AdminLogs = () => {
                     </td>
                     <td className="p-4 align-top max-w-sm">
                       {log.details ? (
-                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 text-sm text-gray-700 whitespace-pre-wrap break-words leading-relaxed">
+                        <div 
+                          className="bg-gray-50 p-3 rounded-lg border border-gray-100 text-sm text-gray-700 whitespace-pre-wrap break-words leading-relaxed line-clamp-2 cursor-help"
+                          title={formatDetails(log.details)}
+                        >
                           {formatDetails(log.details)}
                         </div>
                       ) : (

@@ -28,7 +28,7 @@ class TaskRepository {
   }
 
   async findTasksByProjectId(projectId) {
-    return await Task.find({ project: projectId }).select('assignedTo');
+    return await Task.find({ project: projectId }).select('assignedTo status');
   }
 
   async findTasksAssignedToUser(userId) {

@@ -5,8 +5,8 @@ const TaskService = require('../services/TaskService');
 // @access  Private
 const getTasks = async (req, res) => {
   try {
-    const { projectId, page = 1, limit = 10, search = '' } = req.query;
-    const result = await TaskService.getTasksForUser(req.user, projectId, parseInt(page), parseInt(limit), search);
+    const { projectId, page = 1, limit = 10, search = '', status, assignedTo, excludeStatus } = req.query;
+    const result = await TaskService.getTasksForUser(req.user, projectId, parseInt(page), parseInt(limit), search, { status, assignedTo, excludeStatus });
     res.json(result);
   } catch (error) {
     if (error.statusCode) {

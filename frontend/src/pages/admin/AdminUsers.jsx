@@ -140,13 +140,13 @@ const AdminUsers = () => {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col overflow-hidden">
         <div className="overflow-auto max-h-[400px] md:max-h-none md:flex-1">
-          <table className="w-full text-left border-collapse text-sm">
+          <table className="w-full text-left border-collapse text-sm table-fixed min-w-[800px]">
             <thead>
               <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
-                <th className="p-4 font-medium">User</th>
-                <th className="p-4 font-medium">Contact</th>
-                <th className="p-4 font-medium">Role</th>
-                <th className="p-4 font-medium">Assigned Tasks</th>
+                <th className="p-4 font-medium w-[22%]">User</th>
+                <th className="p-4 font-medium w-[23%]">Contact</th>
+                <th className="p-4 font-medium w-[20%]">Role</th>
+                <th className="p-4 font-medium w-[35%]">Assigned Tasks</th>
               </tr>
             </thead>
             <tbody>
@@ -173,8 +173,8 @@ const AdminUsers = () => {
                             {user.name.charAt(0)}
                           </div>
                           <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold text-gray-800">{user.name}</p>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <p className="font-semibold text-gray-800 truncate cursor-help" title={user.name}>{user.name}</p>
                               <button 
                                 onClick={() => { setUserToEdit(user); setIsEditUserModalOpen(true); }}
                                 className="text-gray-400 hover:text-blue-600 transition"
@@ -194,9 +194,9 @@ const AdminUsers = () => {
                         </div>
                       </td>
                       <td className="p-4">
-                        <div className="flex items-center gap-2 text-gray-600 text-sm">
-                          <Mail className="h-4 w-4 text-gray-400" />
-                          {user.email}
+                        <div className="flex items-center gap-2 text-gray-600 text-sm min-w-0">
+                          <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                          <span className="truncate cursor-help" title={user.email}>{user.email}</span>
                         </div>
                       </td>
                       <td className="p-4">
@@ -239,7 +239,10 @@ const AdminUsers = () => {
                                   onClick={() => { setSelectedTask(task); setIsTaskModalOpen(true); }}
                                 >
                                   <span className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${task.status === 'Done' ? 'bg-green-500' : 'bg-blue-500'}`}></span>
-                                  <span className={task.status === 'Done' ? 'line-through text-gray-400' : 'text-gray-700'}>
+                                  <span 
+                                    className={`truncate cursor-help block min-w-0 flex-1 ${task.status === 'Done' ? 'line-through text-gray-400' : 'text-gray-700'}`}
+                                    title={task.title}
+                                  >
                                     {task.title}
                                   </span>
                                 </li>

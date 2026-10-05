@@ -10,6 +10,11 @@ import TaskModal from '../user/TaskModal';
 import Pagination from '../../components/Pagination';
 import toast from 'react-hot-toast';
 
+const truncateText = (text, maxLength) => {
+  if (!text) return '';
+  return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+};
+
 const AdminDashboard = () => {
   const dispatch = useDispatch();
   const { items: projects, totalPages: projectTotalPages, isLoading: isProjectsLoading } = useSelector((state) => state.projects);
@@ -183,7 +188,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-8">
 
         {/* ── Recent Projects ─────────────────────────────────────────────── */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden h-full">
@@ -212,16 +217,16 @@ const AdminDashboard = () => {
               </select>
             </div>
           </div>
-          <div className="overflow-scroll max-h-[400px] md:max-h-none md:flex-1 min-h-[300px]">
-            <table className="w-full text-left border-collapse text-sm">
+          <div className="overflow-auto max-h-[400px] md:max-h-[500px] min-h-[300px] w-full">
+            <table className="w-full min-w-[1000px] text-left border-collapse text-sm table-fixed">
               <thead>
                 <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
-                  <th className="p-4 font-medium">Project Name</th>
-                  <th className="p-4 font-medium">Manager</th>
-                  <th className="p-4 font-medium">Status</th>
-                  <th className="p-4 font-medium">Members</th>
-                  <th className="p-4 font-medium">Progress</th>
-                  <th className="p-4 font-medium text-right">Actions</th>
+                  <th className="p-4 font-medium w-[25%]">Project Name</th>
+                  <th className="p-4 font-medium w-[15%]">Manager</th>
+                  <th className="p-4 font-medium w-[10%]">Status</th>
+                  <th className="p-4 font-medium w-[10%]">Members</th>
+                  <th className="p-4 font-medium w-[15%]">Progress</th>
+                  <th className="p-4 font-medium text-right w-[25%]">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -246,11 +251,20 @@ const AdminDashboard = () => {
                       );
                       return (
                         <tr key={project._id} className="border-b border-gray-50 hover:bg-gray-50">
-                          <td className="p-4 font-medium text-gray-800">{project.title}</td>
-                          <td className="p-4 text-gray-600">{project.manager?.name || 'Unassigned'}</td>
+                          <td className="p-4">
+                            <div className="font-medium text-gray-800 truncate cursor-help" title={project.title}>
+                              {project.title}
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <div className="text-gray-600 break-words line-clamp-2 cursor-help" title={project.manager?.name || 'Unassigned'}>
+                              {project.manager?.name || 'Unassigned'}
+                            </div>
+                          </td>
                           <td className="p-4">
                             <span className={`px-2 py-1 rounded-full text-xs ${
                               project.status === 'Completed' ? 'bg-green-100 text-green-700' :
+                              project.status === 'In Progress' ? 'bg-purple-100 text-purple-700' :
                               project.status === 'On Hold'  ? 'bg-amber-100 text-amber-700' :
                               'bg-blue-100 text-blue-700'
                             }`}>
@@ -267,6 +281,7 @@ const AdminDashboard = () => {
                                 <div
                                   className={`h-1.5 rounded-full transition-all duration-500 ${
                                     project.status === 'Completed' ? 'bg-green-500' :
+                                    project.status === 'In Progress' ? 'bg-purple-500' :
                                     project.status === 'On Hold'  ? 'bg-amber-500' :
                                     'bg-blue-500'
                                   }`}
@@ -415,6 +430,7 @@ const AdminDashboard = () => {
                           <div className="flex items-center gap-2 min-w-0">
                             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
                               project.status === 'Completed' ? 'bg-green-500' :
+                              project.status === 'In Progress' ? 'bg-purple-500' :
                               project.status === 'On Hold'  ? 'bg-amber-400' : 'bg-blue-500'
                             }`} />
                             <span className="text-sm font-medium text-gray-700 truncate">{project.title}</span>

@@ -57,6 +57,12 @@ export const projectSlice = createSlice({
   initialState,
   reducers: {
     reset: () => initialState,
+    updateProjectInState: (state, action) => {
+      const index = state.items.findIndex(p => p._id === action.payload._id);
+      if (index !== -1) {
+        state.items[index] = action.payload;
+      }
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -101,5 +107,5 @@ export const projectSlice = createSlice({
   },
 });
 
-export const { reset } = projectSlice.actions;
+export const { reset, updateProjectInState } = projectSlice.actions;
 export default projectSlice.reducer;
