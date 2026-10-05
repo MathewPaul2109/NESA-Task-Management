@@ -1,9 +1,11 @@
 import React from 'react';
 import { X, Clock, User as UserIcon } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import TaskModal from './TaskModal';
 
 const ProjectTasksModal = ({ isOpen, onClose, project }) => {
   const { items: tasks } = useSelector((state) => state.tasks || { items: [] });
+  const [selectedTask, setSelectedTask] = React.useState(null);
   
   if (!isOpen || !project) return null;
 
@@ -45,7 +47,11 @@ const ProjectTasksModal = ({ isOpen, onClose, project }) => {
           ) : (
             <div className="space-y-4">
               {pendingTasks.map(task => (
-                <div key={task._id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                <div 
+                  key={task._id} 
+                  className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:shadow-md hover:border-blue-300 transition"
+                  onClick={() => setSelectedTask(task)}
+                >
                   <div className="flex justify-between items-start mb-2 gap-4">
                     <h3 className="font-semibold text-gray-800 break-words min-w-0 flex-1">{task.title}</h3>
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -86,6 +92,11 @@ const ProjectTasksModal = ({ isOpen, onClose, project }) => {
           )}
         </div>
       </div>
+      <TaskModal 
+        isOpen={!!selectedTask}
+        onClose={() => setSelectedTask(null)}
+        task={selectedTask}
+      />
     </div>
   );
 };

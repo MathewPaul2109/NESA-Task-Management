@@ -26,16 +26,19 @@ const AdminActiveProjects = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(searchInput);
-      setCurrentPage(1);
-    }, 500);
+      if (searchInput.length >= 3 || searchInput.length === 0) {
+        setDebouncedSearch(searchInput);
+        setCurrentPage(1);
+      }
+    }, 3000);
     return () => clearTimeout(timer);
   }, [searchInput]);
 
   useEffect(() => {
     // We explicitly request ONLY 'Active' status projects
     dispatch(getProjects({ status: 'Active', search: debouncedSearch, page: currentPage, limit: itemsPerPage }));
-    dispatch(getTasks({ limit: 1000 })); // Fetch enough tasks to calculate progress for all shown projects
+    // TODO: Revert limit or implement backend progress calculation if tasks per project exceed 10
+    dispatch(getTasks({ limit: 10 })); // Fetch enough tasks to calculate progress for all shown projects
   }, [dispatch, currentPage, debouncedSearch]);
 
   return (

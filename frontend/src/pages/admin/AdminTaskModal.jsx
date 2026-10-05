@@ -34,8 +34,6 @@ const AdminTaskModal = ({ isOpen, onClose }) => {
     };
     if (isOpen) {
       fetchUsers();
-      setProjectSearch('');
-      setUserSearch('');
     }
   }, [isOpen]);
 

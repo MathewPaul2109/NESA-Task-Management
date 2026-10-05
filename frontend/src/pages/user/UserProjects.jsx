@@ -33,7 +33,8 @@ const UserProjects = () => {
 
   useEffect(() => {
     dispatch(getProjects({ page: currentPage, limit: itemsPerPage, search: debouncedSearch }));
-    dispatch(getTasks({ limit: 1000 })); // Fetch enough tasks to calculate progress for all shown projects
+    // TODO: Revert limit or implement backend progress calculation if tasks per project exceed 10
+    dispatch(getTasks({ limit: 10 })); // Fetch enough tasks to calculate progress for all shown projects
   }, [dispatch, currentPage, debouncedSearch]);
 
   return (

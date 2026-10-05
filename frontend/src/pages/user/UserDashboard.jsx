@@ -194,7 +194,8 @@ const UserDashboard = () => {
   const socketRef = useRef(null);
 
   useEffect(() => {
-    dispatch(getTasks({ page: 1, limit: 1000, assignedTo: 'me', search: debouncedSearch }));
+    // TODO: Revert limit or implement backend progress calculation if tasks per project exceed 10
+    dispatch(getTasks({ page: 1, limit: 10, assignedTo: 'me', search: debouncedSearch }));
 
     // Guard against StrictMode / fast-refresh double-registration
     if (socketRef.current) return;
@@ -202,8 +203,8 @@ const UserDashboard = () => {
     const socket = io('http://localhost:5000');
     socketRef.current = socket;
 
-    socket.on('task_updated', () => dispatch(getTasks({ page: 1, limit: 1000, assignedTo: 'me', search: debouncedSearch })));
-    socket.on('task_created', () => dispatch(getTasks({ page: 1, limit: 1000, assignedTo: 'me', search: debouncedSearch })));
+    socket.on('task_updated', () => dispatch(getTasks({ page: 1, limit: 10, assignedTo: 'me', search: debouncedSearch })));
+    socket.on('task_created', () => dispatch(getTasks({ page: 1, limit: 10, assignedTo: 'me', search: debouncedSearch })));
     socket.on('new_comment', (comment) => {
       dispatch(appendComment(comment));
       if (comment.author?._id !== user?._id) {
@@ -256,6 +257,10 @@ const UserDashboard = () => {
     const task = myTasks.find(t => t._id === active.id);
 
     if (task && task.status !== targetStatus) {
+      if (targetStatus === 'Done' && user?.role === 'User') {
+        toast.error('Only Project Managers or Admins can mark a task as Done.');
+        return; 
+      }
       dispatch(updateTask({ id: task._id, taskData: { status: targetStatus } }));
       toast.success(`Moved to "${targetStatus}"`);
     }

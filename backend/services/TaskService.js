@@ -133,6 +133,12 @@ class TaskService {
       throw err;
     }
 
+    if (updateData.status === 'Done' && user.role === 'User') {
+      const err = new Error('Only Project Managers or Admins can mark tasks as Done');
+      err.statusCode = 403;
+      throw err;
+    }
+
     if (user.role === 'User') {
       task.status = updateData.status || task.status;
     } else {

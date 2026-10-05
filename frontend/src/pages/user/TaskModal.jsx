@@ -81,7 +81,7 @@ const TaskModal = ({ isOpen, onClose, task }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
         
         {/* Header */}
@@ -212,7 +212,9 @@ const TaskModal = ({ isOpen, onClose, task }) => {
                   <option value="To Do">To Do</option>
                   <option value="In Progress">In Progress</option>
                   <option value="Review">Review</option>
-                  <option value="Done">Done</option>
+                  {user?.role !== 'User' && (
+                    <option value="Done">Done</option>
+                  )}
                 </select>
                 <button 
                   onClick={handleStatusUpdate}

@@ -37,29 +37,32 @@ const AdminDashboard = () => {
   const taskItemsPerPage = 5;
 
   const [taskSearchQuery, setTaskSearchQuery] = useState('');
+  const [debouncedProjectSearch, setDebouncedProjectSearch] = useState('');
   const [debouncedTaskSearch, setDebouncedTaskSearch] = useState('');
 
   useEffect(() => {
-    // Add debouncing for project search
     const timer = setTimeout(() => {
       if (searchQuery.length >= 3 || searchQuery.length === 0) {
-        dispatch(getProjects({ search: searchQuery, status: statusFilter, page: currentProjectPage, limit: projectItemsPerPage }));
+        setDebouncedProjectSearch(searchQuery);
+        setCurrentProjectPage(1);
       }
     }, 3000);
     return () => clearTimeout(timer);
-  }, [dispatch, searchQuery, statusFilter, currentProjectPage]);
+  }, [searchQuery]);
 
   useEffect(() => {
-    // Add debouncing for task search
+    dispatch(getProjects({ search: debouncedProjectSearch, status: statusFilter, page: currentProjectPage, limit: projectItemsPerPage }));
+  }, [dispatch, debouncedProjectSearch, statusFilter, currentProjectPage]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       if (taskSearchQuery.length >= 3 || taskSearchQuery.length === 0) {
         setDebouncedTaskSearch(taskSearchQuery);
-        dispatch(getTasks({ page: currentTaskPage, limit: taskItemsPerPage, search: taskSearchQuery }));
         setCurrentTaskPage(1);
       }
     }, 3000);
     return () => clearTimeout(timer);
-  }, [dispatch, taskSearchQuery]);
+  }, [taskSearchQuery]);
 
   useEffect(() => {
     dispatch(getTasks({ page: currentTaskPage, limit: taskItemsPerPage }));
@@ -93,6 +96,11 @@ const AdminDashboard = () => {
 
   const completedTasks = tasks
     .filter(t => t.status === 'Done')
+    .filter(t => t.title.toLowerCase().includes(debouncedTaskSearch.toLowerCase()))
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+  const reviewTasks = tasks
+    .filter(t => t.status === 'Review')
     .filter(t => t.title.toLowerCase().includes(debouncedTaskSearch.toLowerCase()))
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
@@ -456,6 +464,43 @@ const AdminDashboard = () => {
                   })()}
                 </div>
               </div>
+
+              {/* Tasks in Review */}
+              {reviewTasks.length > 0 && (
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Eye className="h-4 w-4 text-amber-500" />
+                      <span className="text-sm font-medium text-gray-600">
+                        Tasks in Review
+                        <span className="text-gray-400 font-normal ml-1">({reviewTasks.length})</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    {reviewTasks.map(task => (
+                      <div
+                        key={task._id}
+                        className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-50 border border-gray-100 cursor-pointer transition-colors group"
+                        onClick={() => { setSelectedCompletedTask(task); setIsCompletedTaskModalOpen(true); }}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Eye className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-700 truncate">{task.title}</p>
+                            <p className="text-xs text-gray-400">
+                              {task.project?.title || 'Unknown Project'} · {new Date(task.updatedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-xs font-medium text-amber-600 opacity-0 group-hover:opacity-100 transition">
+                          Review &gt;
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Completed tasks — compact archive list */}
               {completedTasks.length > 0 && (
