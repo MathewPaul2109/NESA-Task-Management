@@ -157,29 +157,8 @@ class TaskService {
     if (updatedTask.project) {
       const allProjectTasks = await TaskRepository.findTasksByProjectId(updatedTask.project);
       if (allProjectTasks.length > 0) {
-        const allDone = allProjectTasks.every(t => t.status === 'Done');
-        const project = await ProjectRepository.findProjectById(updatedTask.project);
-        if (project) {
-          let projectStatusChanged = false;
-          if (allDone && project.status !== 'Completed') {
-            project.status = 'Completed';
-            project.isArchived = true;
-            await ProjectRepository.updateProject(project);
-            await logAction('PROJECT_COMPLETED_AUTO', user._id, { title: project.title }, project._id);
-            projectStatusChanged = true;
-          } else if (!allDone && project.status === 'Completed') {
-            project.status = 'Active';
-            project.isArchived = false;
-            await ProjectRepository.updateProject(project);
-            await logAction('PROJECT_UNCOMPLETED_AUTO', user._id, { title: project.title }, project._id);
-            projectStatusChanged = true;
-          }
-          
-          if (projectStatusChanged && io) {
-            const populatedProject = await ProjectRepository.findProjectById(project._id);
-            io.emit('project_updated', populatedProject);
-          }
-        }
+        // We no longer auto-complete or auto-archive projects based on task status.
+        // Projects must be completed and archived manually by an admin.
       }
     }
 

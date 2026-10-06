@@ -19,7 +19,7 @@ const AdminUsers = () => {
   const [updatingUserId, setUpdatingUserId] = useState(null);
   
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   
   // Modals state
   const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
@@ -60,7 +60,7 @@ const AdminUsers = () => {
       }
     };
     fetchUsers();
-  }, [dispatch, currentPage, debouncedSearch]);
+  }, [dispatch, currentPage, debouncedSearch, itemsPerPage]);
 
   const filteredUsers = users;
 
@@ -264,6 +264,9 @@ const AdminUsers = () => {
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
+            limit={itemsPerPage}
+            onLimitChange={setItemsPerPage}
+            allowCustomLimit={true}
           />
         )}
       </div>

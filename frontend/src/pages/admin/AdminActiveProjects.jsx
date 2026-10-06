@@ -19,7 +19,7 @@ const AdminActiveProjects = () => {
   const [projectToEdit, setProjectToEdit] = React.useState(null);
 
   const [currentPage, setCurrentPage] = React.useState(1);
-  const itemsPerPage = 6;
+  const [itemsPerPage, setItemsPerPage] = React.useState(6);
 
   const [searchInput, setSearchInput] = React.useState('');
   const [debouncedSearch, setDebouncedSearch] = React.useState('');
@@ -37,9 +37,9 @@ const AdminActiveProjects = () => {
   useEffect(() => {
     // We explicitly request ONLY 'Active' status projects
     dispatch(getProjects({ status: 'Active', search: debouncedSearch, page: currentPage, limit: itemsPerPage }));
-    // TODO: Revert limit or implement backend progress calculation if tasks per project exceed 10
-    dispatch(getTasks({ limit: 10 })); // Fetch enough tasks to calculate progress for all shown projects
-  }, [dispatch, currentPage, debouncedSearch]);
+    // Fetch enough tasks to calculate progress for all shown projects (based on new limit)
+    dispatch(getTasks({ limit: itemsPerPage * 5 })); // Rough estimation, or could remove limit entirely for tasks here if needed
+  }, [dispatch, currentPage, debouncedSearch, itemsPerPage]);
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -164,6 +164,9 @@ const AdminActiveProjects = () => {
               currentPage={currentPage}
               totalPages={totalPages || 1}
               onPageChange={setCurrentPage}
+              limit={itemsPerPage}
+              onLimitChange={setItemsPerPage}
+              limits={[6, 12, 24, 48]}
             />
           </div>
         </div>

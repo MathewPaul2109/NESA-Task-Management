@@ -126,13 +126,13 @@ class ProjectService {
     if (populatedProject.manager && populatedProject.manager.email) {
       try {
         const cleanDescription = description ? description.replace(/<[^>]*>?/gm, '') : '';
-        await sendEmail({
+        sendEmail({
           email: populatedProject.manager.email,
           subject: 'You have been assigned as Project Manager',
           message: `You have been assigned as the Project Manager for the new project: ${title}\n\nDescription: ${cleanDescription}`
-        });
+        }).catch(err => console.error('Error sending email to manager:', err));
       } catch (err) {
-        console.error('Error sending email to manager:', err);
+        console.error('Error in manager email block:', err);
       }
     }
 
@@ -141,13 +141,13 @@ class ProjectService {
         if (member.email) {
           try {
             const cleanDescription = description ? description.replace(/<[^>]*>?/gm, '') : '';
-            await sendEmail({
+            sendEmail({
               email: member.email,
               subject: 'You have been added to a new Project',
               message: `You have been added to the project: ${title}\n\nProject Manager: ${populatedProject.manager.name}\n\nDescription: ${cleanDescription}`
-            });
+            }).catch(err => console.error('Error sending email to member:', err));
           } catch (err) {
-            console.error('Error sending email to member:', err);
+            console.error('Error in member email block:', err);
           }
         }
       }
@@ -182,12 +182,8 @@ class ProjectService {
         throw err;
       }
       project.status = updateData.status;
-      project.isArchived = true;
     } else if (updateData.status) {
       project.status = updateData.status;
-      if (project.status !== 'Completed') {
-        project.isArchived = false;
-      }
     }
     if (updateData.manager) project.manager = updateData.manager;
 
