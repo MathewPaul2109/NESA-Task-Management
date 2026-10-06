@@ -176,6 +176,7 @@ const UserDashboard = () => {
 
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -195,7 +196,7 @@ const UserDashboard = () => {
 
   useEffect(() => {
     // TODO: Revert limit or implement backend progress calculation if tasks per project exceed 10
-    dispatch(getTasks({ page: 1, limit: 10, assignedTo: 'me', search: debouncedSearch }));
+    dispatch(getTasks({ page: 1, limit: itemsPerPage, assignedTo: 'me', search: debouncedSearch }));
 
     // Guard against StrictMode / fast-refresh double-registration
     if (socketRef.current) return;
@@ -203,8 +204,8 @@ const UserDashboard = () => {
     const socket = io('http://localhost:5000');
     socketRef.current = socket;
 
-    socket.on('task_updated', () => dispatch(getTasks({ page: 1, limit: 10, assignedTo: 'me', search: debouncedSearch })));
-    socket.on('task_created', () => dispatch(getTasks({ page: 1, limit: 10, assignedTo: 'me', search: debouncedSearch })));
+    socket.on('task_updated', () => dispatch(getTasks({ page: 1, limit: itemsPerPage, assignedTo: 'me', search: debouncedSearch })));
+    socket.on('task_created', () => dispatch(getTasks({ page: 1, limit: itemsPerPage, assignedTo: 'me', search: debouncedSearch })));
     socket.on('new_comment', (comment) => {
       dispatch(appendComment(comment));
       if (comment.author?._id !== user?._id) {
@@ -216,7 +217,7 @@ const UserDashboard = () => {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [dispatch, user?._id, debouncedSearch]);
+  }, [dispatch, user?._id, debouncedSearch, itemsPerPage]);
 
   const myTasks = Array.isArray(tasks) ? tasks : [];
 
@@ -273,14 +274,29 @@ const UserDashboard = () => {
           <h2 className="text-xl font-bold text-gray-800">My Tasks</h2>
           <p className="text-xs text-gray-400">Drag cards between columns to update status</p>
         </div>
-        <div className="relative w-full sm:w-64">
-          <input 
-            type="text" 
-            placeholder="Search tasks..." 
-            className="px-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 outline-none w-full"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-          />
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600 whitespace-nowrap">Fetch Limit:</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => setItemsPerPage(Number(e.target.value))}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
+          <div className="relative flex-1 sm:w-64">
+            <input 
+              type="text" 
+              placeholder="Search tasks..." 
+              className="px-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 outline-none w-full"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 

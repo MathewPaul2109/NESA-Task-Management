@@ -31,10 +31,10 @@ const AdminDashboard = () => {
   const [statusFilter, setStatusFilter] = useState('');
 
   const [currentProjectPage, setCurrentProjectPage] = useState(1);
-  const projectItemsPerPage = 5;
+  const [projectItemsPerPage, setProjectItemsPerPage] = useState(5);
 
   const [currentTaskPage, setCurrentTaskPage] = useState(1);
-  const taskItemsPerPage = 5;
+  const [taskItemsPerPage, setTaskItemsPerPage] = useState(5);
 
   const [taskSearchQuery, setTaskSearchQuery] = useState('');
   const [debouncedProjectSearch, setDebouncedProjectSearch] = useState('');
@@ -52,7 +52,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     dispatch(getProjects({ search: debouncedProjectSearch, status: statusFilter, page: currentProjectPage, limit: projectItemsPerPage }));
-  }, [dispatch, debouncedProjectSearch, statusFilter, currentProjectPage]);
+  }, [dispatch, debouncedProjectSearch, statusFilter, currentProjectPage, projectItemsPerPage]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -66,7 +66,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     dispatch(getTasks({ page: currentTaskPage, limit: taskItemsPerPage }));
-  }, [dispatch, currentTaskPage]);
+  }, [dispatch, currentTaskPage, taskItemsPerPage]);
 
   const activeProjects = projects.filter(p => p.status === 'Active').length;
   const completedProjects = projects.filter(p => p.status === 'Completed').length;
@@ -331,8 +331,11 @@ const AdminDashboard = () => {
           {!isProjectsLoading && projects.length > 0 && (
             <Pagination
               currentPage={currentProjectPage}
-              totalPages={projectTotalPages}
+              totalPages={Math.max(projectTotalPages, Math.ceil(projects.length / (parseInt(projectItemsPerPage) || 1)))}
               onPageChange={setCurrentProjectPage}
+              limit={projectItemsPerPage}
+              onLimitChange={setProjectItemsPerPage}
+              allowCustomLimit={true}
             />
           )}
         </div>
@@ -562,8 +565,11 @@ const AdminDashboard = () => {
                   {completedTasks.length > taskItemsPerPage && (
                     <Pagination
                       currentPage={currentTaskPage}
-                      totalPages={taskTotalPages}
+                      totalPages={Math.max(taskTotalPages, Math.ceil(completedTasks.length / (parseInt(taskItemsPerPage) || 1)))}
                       onPageChange={setCurrentTaskPage}
+                      limit={taskItemsPerPage}
+                      onLimitChange={setTaskItemsPerPage}
+                      allowCustomLimit={true}
                     />
                   )}
                 </div>
